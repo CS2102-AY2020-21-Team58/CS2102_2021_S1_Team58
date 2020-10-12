@@ -27,22 +27,22 @@ CREATE TABLE full_timers (
 );
 
 CREATE TABLE available_dates (
-    username varchar(64) references part_timers(username),
+    username     varchar(64) references part_timers(username),
     start_period date NOT NULL, 
-    end_period date NOT NULL,
+    end_period   date NOT NULL,
     PRIMARY KEY(username, start_period, end_period)
 );
 
 CREATE TABLE leave_dates (
-    username varchar(64) references full_timers(username),
+    username     varchar(64) references full_timers(username),
     start_period date NOT NULL, 
-    end_period date NOT NULL,
+    end_period   date NOT NULL,
     PRIMARY KEY(username, start_period, end_period)
 );
 
 CREATE TABLE pet_types (
     animal_name varchar(64) PRIMARY KEY,
-    base_price numeric NOT NULL
+    base_price  numeric NOT NULL
 );
 
 CREATE TABLE services (
@@ -50,15 +50,15 @@ CREATE TABLE services (
 );
 
 CREATE TABLE handles (
-    caretaker varchar(64) references caretakers(username),
+    caretaker   varchar(64) references caretakers(username),
     animal_name varchar(64) references pet_types(animal_name),
-    price numeric NOT NULL check(price > 0),
+    price       numeric     NOT NULL check(price > 0),
     PRIMARY KEY(caretaker, animal_name)
 );
 
 CREATE TABLE provides (
-    caretaker varchar(64),
-    animal_name varchar(64),
+    caretaker    varchar(64),
+    animal_name  varchar(64),
     service_name varchar(64) references services(service_name),
     FOREIGN KEY(caretaker, animal_name) references handles(caretaker, animal_name),
     PRIMARY KEY(caretaker, animal_name, service_name)
@@ -66,7 +66,7 @@ CREATE TABLE provides (
 
 CREATE TABLE pets (
     pet_name varchar(64),
-    type varchar(64) references pet_types(animal_name),
+    type varchar(64)  references pet_types(animal_name),
     owner varchar(64) references owners(username) ON DELETE CASCADE,
     PRIMARY KEY(name, owner)
 );
@@ -74,7 +74,7 @@ CREATE TABLE pets (
 CREATE TABLE requires (
     owner varchar(64),
     pet_name varchar(64),
-    service_name varchar(64) references services(service_name),
+    service_name varchar(64)     references services(service_name),
     FOREIGN KEY(owner, pet_name) references pets(owner, pet_name),
     PRIMARY KEY(owner, pet_name, service_name)
 );
