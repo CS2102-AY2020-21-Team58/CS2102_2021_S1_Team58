@@ -68,7 +68,7 @@ CREATE TABLE pets (
     pet_name varchar(64),
     type varchar(64)  references pet_types(animal_name),
     owner varchar(64) references owners(username) ON DELETE CASCADE,
-    PRIMARY KEY(name, owner)
+    PRIMARY KEY(pet_name, owner)
 );
 
 CREATE TABLE requires (
