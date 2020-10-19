@@ -11,7 +11,8 @@ CREATE TABLE administrator (
 );
 
 CREATE TABLE caretakers (
-    username varchar(64) references users(username) PRIMARY KEY
+    username varchar(64) references users(username) PRIMARY KEY,
+    average_rating numeric check(average_rating >= 0 AND average_rating <= 5)
 );
 
 CREATE TABLE owners (
@@ -87,7 +88,6 @@ CREATE TABLE bookings (
     end_period date,
     payment_method varchar(64) NOT NULL,
     delivery_method varchar(64) NOT NULL,
-    delivery_type varchar(64) NOT NULL,
     status varchar(64) NOT NULL,
     bid_rate numeric NOT NULL,
     rating numeric check(rating >= 0 AND rating <= 5),
