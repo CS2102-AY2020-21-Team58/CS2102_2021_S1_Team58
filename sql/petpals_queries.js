@@ -52,7 +52,7 @@ sql.query = {
     //Accept a booking
     accept_booking: 'UPDATE bookings SET status = \'ACCEPTED\' WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4 AND end_period = $5',
     //Decline a booking
-    accept_booking: 'UPDATE bookings SET status = \'DECLINED\' WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4 AND end_period = $5',
+    decline_booking: 'UPDATE bookings SET status = \'DECLINED\' WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4 AND end_period = $5',
     //Update base price for a pet type
     update_base_price: 'UPDATE pet_types SET base_price = $2 WHERE animal_name = $1',
     //Update password
@@ -117,8 +117,46 @@ sql.query = {
     get_caretakers_with_poor_reviews: 'SELECT username FROM caretakers WHERE average_rating < $1 AND (SELECT COUNT(*) FROM bookings WHERE caretaker = username AND rating IS NOT NULL)',
     //get all services of a caretaker for a pet type
     get_caretaker_services: 'SELECT * FROM provides WHERE animal_name = $1 AND caretaker = $2',
-    //get all care takers that can handle a pet type with prices
+    //get all care takers that can handle a pet type with prices and average review
     get_caretakers_prices: 'SELECT * FROM caretakers NATURAL JOIN handles WHERE animal_name = $1',
+    //Get all caretakers in the same area as a given pet owner
+    get_caretakers_in_area: 'SELECT U2.username FROM users U1, users U2, caretakers C WHERE U1.username = $1 AND C.username = U2.username AND U2.area = U1.area',
+    //get pets of a pet owner
+    get_pet_owners_pets: 'SELECT * FROM pets WHERE owner = $1',
+    //Get all services of a pet
+    get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
+    //pet owner views all bookings
+    get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
+    //pet owner views all pending bookings
+    get_all_pending_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND status = \'PENDING\'',
+    //pet owner views all accepted bookings
+    get_all_accepted_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND status = \'ACCEPTED\'',
+    //pet owner views all declined bookings
+    get_all_declined_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND status = \'DECLINED\'',
+    //pet owner views all bookings of a particular pet
+    get_all_pets_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2',
+    //pet owner views all pending bookings of a particular pet
+    get_all_pending_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'PENDING\'',
+    //pet owner views all accepted bookings of a particular pet
+    get_all_accepted_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'ACCEPTED\'',
+    //pet owner views all declined bookings of a particular pet
+    get_all_declined_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'DECLINED\'',
+    //care taker views all bookings
+    get_all_caretaker_bookings: 'SELECT * FROM bookings WHERE caretaker = $1',
+    //care taker views all pending bookings
+    get_all_pending_caretaker_bookings: 'SELECT * FROM bookings WHERE caretaker = $1 AND status = \'PENDING\'',
+    //care taker views all accepted booking
+    get_all_accepted_caretaker_bookings: 'SELECT * FROM bookings WHERE caretaker = $1 AND status = \'ACCEPTED\'',
+    //care taker views all rejected bookings
+    get_all_declined_caretakers_bookings: 'SELECT * FROM bookings WHERE caretaker = $1 AND status = \'DECLINED\'',
+    //retrieve top 5 remarks + ratings of a care taker
+    get_top_five_ratings: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC LIMIT 5',
+    //retrieve bottom 5 remarks + ratings of a care taker
+    get_bottom_five_ratings: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating ASC LIMIT 5',
+    //retrieve all remarks + ratings of a caretaker in ascending order
+    get_ratings_asc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating ASC',
+    //retrieve all remarks + ratings of a caretaker in descending order
+    get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
 
     // ABHIMAN
 
