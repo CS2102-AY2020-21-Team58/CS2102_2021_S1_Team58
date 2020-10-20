@@ -91,17 +91,28 @@ CREATE TABLE requires (
     PRIMARY KEY(owner, pet_name, service_name)
 );
 
+CREATE FUNCTION getMinimumAskingPrice(varchar, varchar, varchar)
+RETURNS NUMERIC AS $$
+  DECLARE rate NUMERIC;
+  BEGIN
+          SELECT  price INTO rate
+          FROM    handles
+          WHERE   caretaker = $1 AND animal_name = (SELECT type FROM pets WHERE pet_name = $3 AND owner = $2);
+
+          RETURN rate;
+  END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE bookings (
     owner varchar(64),
     pet_name varchar(64),
     caretaker varchar(64) references caretakers(username),
     start_period date, 
-    end_period date,
+    end_period date check(end_period >= start_period),
     payment_method varchar(64) NOT NULL,
     delivery_method varchar(64) NOT NULL,
-    delivery_type varchar(64) NOT NULL,
     status varchar(64) NOT NULL,
-    bid_rate numeric NOT NULL,
+    bid_rate numeric NOT NULL check(bid_rate >= getMinimumAskingPrice(caretaker, owner, pet_name)),
     rating numeric check(rating >= 0 AND rating <= 5),
     remarks varchar(1000),
     FOREIGN KEY(owner, pet_name) references pets(owner, pet_name),
