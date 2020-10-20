@@ -64,7 +64,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE handles (
     caretaker   varchar(64) references caretakers(username),
     animal_name varchar(64) references pet_types(animal_name),
-    price       numeric     NOT NULL check(price > getMinimumPrice(animal_name)),
+    price       numeric     NOT NULL check(price >= getMinimumPrice(animal_name)),
     PRIMARY KEY(caretaker, animal_name)
 );
 
@@ -118,4 +118,18 @@ CREATE TABLE bookings (
     FOREIGN KEY(owner, pet_name) references pets(owner, pet_name),
     PRIMARY KEY(owner, pet_name, caretaker, start_period, end_period)
 );
+
+CREATE OR REPLACE FUNCTION update_caretaker_rates_on_new() RETURNS trigger AS $ret$
+	BEGIN
+		UPDATE handles
+		SET price=NEW.base_price
+		WHERE price < NEW.base_price;
+        RETURN NEW;
+	END;    
+$ret$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_caretaker_rates
+	AFTER UPDATE ON pet_types
+	FOR EACH ROW
+	EXECUTE PROCEDURE update_caretaker_rates_on_new();
 
