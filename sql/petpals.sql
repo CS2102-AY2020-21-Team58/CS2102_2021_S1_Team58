@@ -49,10 +49,22 @@ CREATE TABLE services (
     service_name varchar(64) PRIMARY KEY
 );
 
+CREATE FUNCTION getMinimumPrice(varchar)
+RETURNS NUMERIC AS $$
+  DECLARE price NUMERIC;
+  BEGIN
+          SELECT  base_price INTO price
+          FROM    pet_types
+          WHERE   animal_name = $1;
+
+          RETURN price;
+  END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE handles (
     caretaker   varchar(64) references caretakers(username),
     animal_name varchar(64) references pet_types(animal_name),
-    price       numeric     NOT NULL check(price > 0),
+    price       numeric     NOT NULL check(price > getMinimumPrice(animal_name)),
     PRIMARY KEY(caretaker, animal_name)
 );
 
