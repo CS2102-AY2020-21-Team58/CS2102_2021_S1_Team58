@@ -1,10 +1,11 @@
 import React from 'react';
-import Random from '../Random';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import {Page} from '../Page';
 import classes from './App.module.css';
 
 const App = () => (
   <div className={classes.container}>
-    <Random />
+    <Page />
   </div>
 );
 

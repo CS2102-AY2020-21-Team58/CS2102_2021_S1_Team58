@@ -2,6 +2,7 @@ import {combineReducers, createStore, applyMiddleware, compose} from 'redux';
 import {Provider} from 'react-redux';
 import promise from 'redux-promise-middleware';
 import {RandomReducer} from './features/random';
+import {AuthReducer} from './reducers';
 import withProvider from './withProvider';
 
 /**
@@ -9,6 +10,7 @@ import withProvider from './withProvider';
  * all features of the application
  */
 const rootReducer = combineReducers({
+  auth: AuthReducer,
   random: RandomReducer,
 });
 
