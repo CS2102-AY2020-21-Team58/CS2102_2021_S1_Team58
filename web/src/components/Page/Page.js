@@ -8,7 +8,8 @@ const Page = () => {
   return (
     <div className={style.page}>
       <Navbar isLoggedIn={authState.isLoggedIn} userType={authState.userType} />
-      <div>Dummy Content</div>
+
+      <div className={style.content}>Dummy Content</div>
     </div>
   );
 };

@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 import style from './Navbar.module.css';
 
 const Navbar = props => (
-  <NavbarBS bg="light" expand="lg">
+  <NavbarBS bg="light" expand="lg" className={style.navbar}>
     <NavbarBS.Brand>Pet-Pals</NavbarBS.Brand>
-    <Nav className={`mr-auto ${style.navbar}`}>
+    <Nav className={`mr-auto ${style.nav_flex}`}>
       {props.isLoggedIn ? (
         <>
           <Nav.Link href="/">Testing Link</Nav.Link>
