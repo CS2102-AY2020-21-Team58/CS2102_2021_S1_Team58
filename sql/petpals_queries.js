@@ -21,7 +21,7 @@ sql.query = {
     Assumptions: caretaker table has ratings attributes.
     we let part-time caretakers with rating >= 4 to take care of up to 4 pets at a time (otherwise 2)
 
-    variables: $1 start date, $2 end date, $3 pet type, $4 max price
+    variables: $1 start date, $2 end date, $3 owner username, $4 pet name, $5 max price
 
 
     SELECT username, first_name
@@ -54,10 +54,12 @@ sql.query = {
                                 AND T.day BETWEEN B.start_period AND B.end_period) >=
                                 (SELECT CASE
                                   WHEN EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) THEN 5
-                                  WHEN () >= 4 THEN 4
+                                  WHEN (SELECT C.rating FROM caretakers C WHERE C.username = B.username) >= 4 THEN 4
                                   ELSE 2
                                 )
                          )
-      AND EXISTS (SELECT 1 FROM handles H WHERE H.username = U.username AND H.animal_name = $3 AND H.price <= $4)
+      AND EXISTS (SELECT 1 FROM handles H WHERE H.username = U.username
+                    AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)
+                    AND H.price <= $5)
      */
 }
