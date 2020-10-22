@@ -61,5 +61,14 @@ sql.query = {
       AND EXISTS (SELECT 1 FROM handles H WHERE H.username = U.username
                     AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)
                     AND H.price <= $5)
+
+      AND NOT EXISTS (SELECT 1 FROM requires R
+                        WHERE R.pet_name = $4 AND R.owner = $3
+                        AND NOT EXISTS (SELECT 1 FROM provides P
+                                        WHERE P.caretaker = U.usenname
+                                        AND P.service_name = R.service_name
+                                        AND P.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)
+                                        )
+                      )
      */
 }
