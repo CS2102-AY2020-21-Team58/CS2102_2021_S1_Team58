@@ -12,9 +12,10 @@ export default (state = initialState, action) => {
     case LOGIN:
       return {
         ...state,
-        userId: action.payload.user_id,
-        sessionCookie: action.payload.session_cookie,
-        userType: action.payload.user_type,
+        isLoggedIn: true,
+        userId: action.payload.userId,
+        sessionCookie: action.payload.sessionCookie,
+        userType: action.payload.userType,
       };
     case LOGOUT:
       return {

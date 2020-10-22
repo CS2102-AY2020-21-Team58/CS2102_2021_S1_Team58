@@ -9,28 +9,32 @@ const Navbar = props => (
     <Nav className={`mr-auto ${style.nav_flex}`}>
       {props.isLoggedIn ? (
         <>
-          <Nav.Link href="/">Testing Link</Nav.Link>
-          <NavbarBS.Text className="justify-content-end">
-            User Type: ${props.userType}
-          </NavbarBS.Text>
+          <Nav.Link className={style.nav_links} href="/">
+            Testing Link
+          </Nav.Link>
         </>
       ) : (
         <>
           <Nav.Link href="/" className={style.nav_links}>
-            TODO LOGIN
+            Login
           </Nav.Link>
           <Nav.Link href="/" className={style.nav_links}>
-            TODO Register
+            Register
           </Nav.Link>
         </>
       )}
     </Nav>
+    {props.isLoggedIn ? (
+      <NavbarBS.Collapse className="justify-content-end">
+        <NavbarBS.Text>User Type: {props.userType}</NavbarBS.Text>
+      </NavbarBS.Collapse>
+    ) : null}
   </NavbarBS>
 );
 
 Navbar.propTypes = {
-  isLoggedIn: PropTypes.func.isRequired,
-  userType: PropTypes.func.isRequired,
+  isLoggedIn: PropTypes.bool.isRequired,
+  userType: PropTypes.string.isRequired,
 };
 
 export default Navbar;

@@ -1,6 +1,7 @@
 import React from 'react';
 import {useSelector} from 'react-redux';
 import {Navbar} from '../Navbar';
+import {Login} from '../../pages/Login';
 import style from './Page.module.css';
 
 const Page = () => {
@@ -9,7 +10,9 @@ const Page = () => {
     <div className={style.page}>
       <Navbar isLoggedIn={authState.isLoggedIn} userType={authState.userType} />
 
-      <div className={style.content}>Dummy Content</div>
+      <div className={style.content}>
+        <Login />
+      </div>
     </div>
   );
 };
