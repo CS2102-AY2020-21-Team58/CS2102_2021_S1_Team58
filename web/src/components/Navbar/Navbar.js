@@ -5,20 +5,20 @@ import style from './Navbar.module.css';
 
 const Navbar = props => (
   <NavbarBS bg="light" expand="lg" className={style.navbar}>
-    <NavbarBS.Brand>Pet-Pals</NavbarBS.Brand>
+    <NavbarBS.Brand href="/">Pet-Pals</NavbarBS.Brand>
     <Nav className={`mr-auto ${style.nav_flex}`}>
       {props.isLoggedIn ? (
         <>
           <Nav.Link className={style.nav_links} href="/">
-            Testing Link
+            Home Page
           </Nav.Link>
         </>
       ) : (
         <>
-          <Nav.Link href="/" className={style.nav_links}>
+          <Nav.Link href="/login" className={style.nav_links}>
             Login
           </Nav.Link>
-          <Nav.Link href="/" className={style.nav_links}>
+          <Nav.Link href="/register" className={style.nav_links}>
             Register
           </Nav.Link>
         </>
