@@ -9,7 +9,7 @@ const Navbar = props => {
   const isLoggedIn = props.isLoggedIn || isCookieSet();
   const userType = Cookies.get('petpals-userType');
   return (
-    <NavbarBS bg="light" expand="lg" className={style.navbar}>
+    <NavbarBS bg="light" className={style.navbar}>
       <NavbarBS.Brand href="/">Pet-Pals</NavbarBS.Brand>
       <Nav className={`mr-auto ${style.nav_flex}`}>
         {isLoggedIn ? (

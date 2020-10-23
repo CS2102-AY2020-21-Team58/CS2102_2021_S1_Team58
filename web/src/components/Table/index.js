@@ -5,8 +5,10 @@ import {Table as TableBS} from 'react-bootstrap';
 
 const Table = props => {
   const {data: propsData, columns: propsCol} = props;
-  const data = React.useMemo(() => propsData, [propsData]);
-  const columns = React.useMemo(() => propsCol, [propsCol]);
+  // eslint-disable-next-line
+  const data = React.useMemo(() => propsData, []);
+  // eslint-disable-next-line
+  const columns = React.useMemo(() => propsCol, []);
   const tableInstance = useTable({columns, data});
 
   const {
