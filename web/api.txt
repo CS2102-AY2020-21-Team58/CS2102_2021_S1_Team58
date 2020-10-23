@@ -36,6 +36,16 @@
 yyyy/mm/dd
 }
 
+/bookings(owner) GET
+{
+  [bookings] 
+}
+
+/bookings(owner) GET
+{
+  [bookings]
+}
+
 /ratings PUT
 {
   owner
