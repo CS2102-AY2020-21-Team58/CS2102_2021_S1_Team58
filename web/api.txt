@@ -1,0 +1,78 @@
+/pets POST
+
+{
+  pet_type: string,
+  name: string
+  owner_username: string,
+} 
+
+/pets?(name=dfjsdkofj&owner_username=skdjdkf) GET
+{
+  pet object
+}
+404 if nothing
+
+/register POST
+{
+  username: string
+  password: string
+  full_name: string
+  location: string,
+  location: string
+  type: string (Owner/Caretaker)
+}
+400 if it exists already
+
+/login POST
+{
+  username:
+  password:
+}
+400 if not exist
+
+/bookings POST
+{
+...whatever is in booking
+yyyy/mm/dd
+}
+
+/ratings PUT
+{
+  owner
+  petname
+  caretaker
+  start
+  end
+  rating
+}
+
+/caretakers?(start=&end=) GET
+{
+  [
+    all bookings fields except owner petname remarks and ratings
+  ]
+}
+
+
+// Comes later
+
+/leaves(?caretaker=&type=) GET
+{
+[start end]
+}
+If caretaker is not given in param string, return all the leaves
+
+/leaves POST
+{
+caretaker
+start
+end
+type: fulltime or not
+}
+
+/salary GET
+{
+  [
+  caretaker, salary_owed, days_worked
+  ]
+}
