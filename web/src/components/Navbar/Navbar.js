@@ -48,6 +48,13 @@ const Navbar = props => {
           </NavDropdown>
         ) : null}
       </Nav>
+      <Nav className={`mr-auto ${style.nav_flex}`}>
+        {isLoggedIn && userType === 'Owner' ? (
+          <Nav.Link href="/pets" className={style.nav_links}>
+            Pets
+          </Nav.Link>
+        ) : null}
+      </Nav>
       {isLoggedIn ? (
         <NavbarBS.Collapse className="justify-content-end">
           <NavbarBS.Text>User Type: {userType}</NavbarBS.Text>
