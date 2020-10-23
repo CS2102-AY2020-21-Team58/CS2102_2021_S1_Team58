@@ -2,6 +2,7 @@ import React from 'react';
 import {useDispatch} from 'react-redux';
 import {Button, Form} from 'react-bootstrap';
 import {useForm} from 'react-hook-form';
+import Cookies from 'js-cookie';
 import {FormCustom} from '../../components/FormCustom';
 import {LOGIN} from '../../actions/actionTypes';
 
@@ -12,11 +13,14 @@ const Login = () => {
   const onSubmit = data => {
     // TODO: Update with call to API
     const {email} = data;
+    Cookies.set('petpals', 'cookie');
+    Cookies.set('petpals-userType', 'Owner');
+    Cookies.set('petpals-email', email);
+    reset();
     dispatch({
       type: LOGIN,
       payload: {userId: email, sessionCookie: 'cookie', userType: 'Owner'},
     });
-    reset();
   };
 
   return (

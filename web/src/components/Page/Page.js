@@ -4,6 +4,7 @@ import {Route, Switch} from 'react-router-dom';
 import {Navbar} from '../Navbar';
 import {Login} from '../../pages/Login';
 import {Register} from '../../pages/Register';
+import {BidsOwner} from '../../pages/BidsOwner';
 import style from './Page.module.css';
 
 const Page = () => {
@@ -11,13 +12,14 @@ const Page = () => {
   const homePage = () => <p>Home Page</p>;
   return (
     <div className={style.page}>
-      <Navbar isLoggedIn={authState.isLoggedIn} userType={authState.userType} />
+      <Navbar isLoggedIn={authState.isLoggedIn} />
 
       <div className={style.content}>
         <Switch>
           <Route exact path="/" component={homePage} />
           <Route exact path="/login" component={Login} />
           <Route exact path="/register" component={Register} />
+          <Route exact path="/owner-bids" component={BidsOwner} />
         </Switch>
       </div>
     </div>
