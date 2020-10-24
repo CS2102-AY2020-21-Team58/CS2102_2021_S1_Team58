@@ -26,16 +26,14 @@ const PetsPage = () => {
         {Header: 'Pet Type', accessor: 'type'},
       ],
     });
-  }, [state]);
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <div>
       <h3>Current Pets</h3>
-      {state.petsData.length === 0 ? (
-        <p>You have no pets currently.</p>
-      ) : (
-        <Table data={state.petsData} columns={state.petsColumn} />
-      )}
+      <Table data={state.petsData} columns={state.petsColumn} />
+
       <h3>Add a pet</h3>
       <FormCustom
         onSubmit={handleSubmit(() => {
