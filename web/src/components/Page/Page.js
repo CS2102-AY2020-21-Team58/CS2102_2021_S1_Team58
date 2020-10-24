@@ -6,6 +6,7 @@ import {Login} from '../../pages/Login';
 import {Register} from '../../pages/Register';
 import {BidsOwner} from '../../pages/BidsOwner';
 import BidsCaretaker from '../../pages/BidsCaretaker';
+import Leaves from '../../pages/Leaves';
 import PetsPage from '../../pages/Pets';
 import style from './Page.module.css';
 
@@ -24,6 +25,7 @@ const Page = () => {
           <Route exact path="/owner-bids" component={BidsOwner} />
           <Route exact path="/caretaker-bids" component={BidsCaretaker} />
           <Route exact path="/pets" component={PetsPage} />
+          <Route exact path="/leaves" component={Leaves} />
         </Switch>
       </div>
     </div>

@@ -16,6 +16,7 @@ const Login = () => {
     Cookies.set('petpals', 'cookie');
     Cookies.set('petpals-userType', 'Administrator');
     Cookies.set('petpals-email', email);
+    Cookies.set('caretaker-type', 'fulltime');
     reset();
     dispatch({
       type: LOGIN,

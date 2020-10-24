@@ -11,17 +11,11 @@ const Navbar = props => {
   const userType = Cookies.get('petpals-userType');
   return (
     <NavbarBS bg="light" className={style.navbar}>
-      <NavbarBS.Brand href="/">Pet-Pals</NavbarBS.Brand>
+      <Link to="/">
+        <NavbarBS.Brand>Pet-Pals</NavbarBS.Brand>
+      </Link>
       <Nav className={`mr-auto ${style.nav_flex}`}>
-        {isLoggedIn ? (
-          <>
-            <Link to="/">
-              <NavbarBS.Text className={style.nav_links}>
-                Home Page
-              </NavbarBS.Text>
-            </Link>
-          </>
-        ) : (
+        {!isLoggedIn ? (
           <>
             <Link to="/login">
               <NavbarBS.Text className={style.nav_links}>Login</NavbarBS.Text>
@@ -32,7 +26,7 @@ const Navbar = props => {
               </NavbarBS.Text>
             </Link>
           </>
-        )}
+        ) : null}
       </Nav>
       <Nav className={`mr-auto ${style.nav_flex}`}>
         {isLoggedIn ? (
@@ -41,14 +35,18 @@ const Navbar = props => {
             title="Bids"
             id="bids-dropdown">
             {userType === 'Owner' || userType === 'Administrator' ? (
-              <NavDropdown.Item href="/owner-bids" tag={Link}>
-                Bids (Owner)
-              </NavDropdown.Item>
+              <Link to="/owner-bids">
+                <NavDropdown.Item href="/owner-bids">
+                  Bids (Owner)
+                </NavDropdown.Item>
+              </Link>
             ) : null}
             {userType === 'Caretaker' || userType === 'Administrator' ? (
-              <NavDropdown.Item href="/caretaker-bids" tag={Link}>
-                Bids (Caretaker)
-              </NavDropdown.Item>
+              <Link to="/caretaker-bids">
+                <NavDropdown.Item href="/caretaker-bids">
+                  Bids (Caretaker)
+                </NavDropdown.Item>
+              </Link>
             ) : null}
           </NavDropdown>
         ) : null}
@@ -58,6 +56,14 @@ const Navbar = props => {
         userType === 'Administrator' ? (
           <Link to="/pets">
             <NavbarBS.Text className={style.nav_links}>Pets</NavbarBS.Text>
+          </Link>
+        ) : null}
+      </Nav>
+      <Nav className={`mr-auto ${style.nav_flex}`}>
+        {(isLoggedIn && userType === 'Caretaker') ||
+        userType === 'Administrator' ? (
+          <Link to="/leaves">
+            <NavbarBS.Text className={style.nav_links}>Leaves</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
