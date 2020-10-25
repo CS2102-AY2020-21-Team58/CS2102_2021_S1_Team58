@@ -1,3 +1,7 @@
+STATUS_ACCEPTED = "ACCEPTED";
+STATUS_PENDING = "PENDING";
+STATUS_DECLINED = "DECLINED";
+
 const sql = {}
 
 sql.query = {

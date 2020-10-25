@@ -114,9 +114,11 @@ function search(req, res, next) {
 		}
 	});
 }
+
 function dashboard(req, res, next) {
 	basic(req, res, 'dashboard', { info_msg: msg(req, 'info', 'Information updated successfully', 'Error in updating information'), pass_msg: msg(req, 'pass', 'Password updated successfully', 'Error in updating password'), auth: true });
 }
+
 function games(req, res, next) {
 	var ctx = 0, avg = 0, tbl;
 	pool.query(sql_query.query.avg_rating, [req.user.username], (err, data) => {
@@ -137,6 +139,7 @@ function games(req, res, next) {
 		});
 	});
 }
+
 function plays(req, res, next) {
 	var win = 0, avg = 0, ctx = 0, tbl;
 	pool.query(sql_query.query.count_wins, [req.user.username], (err, data) => {
