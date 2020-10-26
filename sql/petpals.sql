@@ -269,16 +269,16 @@ CREATE TRIGGER insert_leave_full_timer
     FOR EACH ROW
     EXECUTE PROCEDURE check_insert_leave_full_timer();
 
-CREATE OR REPLACE FUNCTION merge_availability() RETURNS trigger AS $ret$
+CREATE OR REPLACE FUNCTION check_and_merge_availability() RETURNS trigger AS $ret$
 DECLARE date1 DATE;
 BEGIN
-    IF (EXISTS(SELECT 1 FROM available_dates WHERE start_period = NEW.end_period AND username = NEW.username))
-    THEN NEW.end_period := (SELECT end_period FROM available_dates WHERE start_period = NEW.end_period
+    IF (EXISTS(SELECT 1 FROM available_dates WHERE start_period - 1 = NEW.end_period AND username = NEW.username))
+    THEN NEW.end_period := (SELECT end_period FROM available_dates WHERE start_period - 1 = NEW.end_period
                                                                      AND username = NEW.username LIMIT 1);
     DELETE FROM available_dates WHERE end_period = NEW.end_period AND username = NEW.username;
     END IF;
-    IF (EXISTS(SELECT 1 FROM available_dates WHERE end_period = NEW.start_period AND username = NEW.username))
-    THEN NEW.start_period := (SELECT start_period FROM available_dates WHERE end_period = NEW.start_period
+    IF (EXISTS(SELECT 1 FROM available_dates WHERE end_period + 1 = NEW.start_period AND username = NEW.username))
+    THEN NEW.start_period := (SELECT start_period FROM available_dates WHERE end_period + 1 = NEW.start_period
                                                                          AND username = NEW.username LIMIT 1);
     DELETE FROM available_dates WHERE start_period = NEW.start_period AND username = NEW.username;
     END IF;
@@ -289,5 +289,5 @@ $ret$ LANGUAGE plpgsql;
 CREATE TRIGGER insert_availability
     BEFORE INSERT ON available_dates
     FOR EACH ROW
-EXECUTE PROCEDURE merge_availability();
+EXECUTE PROCEDURE check_and_merge_availability();
 
