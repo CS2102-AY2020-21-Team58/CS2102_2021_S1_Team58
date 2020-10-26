@@ -265,6 +265,9 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
 $ret$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_leave_full_timer
-    BEFORE INSERT leave_dates
+    BEFORE INSERT ON leave_dates
     FOR EACH ROW
     EXECUTE PROCEDURE check_insert_leave_full_timer();
+
+
+
