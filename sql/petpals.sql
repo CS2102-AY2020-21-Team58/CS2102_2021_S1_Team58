@@ -260,21 +260,17 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
             )
             ) THEN RETURN NULL;
         END IF;
-
-        SELECT COUNT(*) INTO num1 
-        FROM bookings 
-        WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username) 
-            AND NEW.username = bookings.caretaker 
-            AND status = 'ACCEPTED' 
-            AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
-                OR (NEW.start_period BETWEEN start_period AND end_period)
-                OR (NEW.end_period BETWEEN start_period AND end_period));
         
-        IF (num1 > 0) THEN
-            RETURN NULL;
-        ELSE
-            RETURN NEW;
+        IF (EXISTS(SELECT 1 FROM bookings
+                   WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username)
+                     AND NEW.username = bookings.caretaker
+                     AND status = 'ACCEPTED'
+                     AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                       OR (NEW.start_period BETWEEN start_period AND end_period)
+                       OR (NEW.end_period BETWEEN start_period AND end_period))))
+            THEN RETURN NULL;
         END IF;
+    
     END;
 $ret$ LANGUAGE plpgsql;
 
