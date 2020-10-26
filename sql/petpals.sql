@@ -246,23 +246,6 @@ CREATE TRIGGER decline_clashing_bids
 	FOR EACH ROW
 	EXECUTE PROCEDURE decline_clashing();
 
-     
-CREATE OR REPLACE FUNCTION insert_leave_full_timer() RETURNS trigger AS $$
-    BEGIN
-        IF NEW.username IN (SELECT username FROM full_timers) AND 
-            (SELECT COUNT(*) FROM bookings WHERE NEW.username = bookings.caretaker AND status = 'ACCEPTED') > 0
-            RETURN NULL;
-        END IF;
-        RETURN NEW;
-    END;
-$$ LANGUAGE plpgsql;
-    
-CREATE TRIGGER check_insert_leave_full_timer
-    AFTER INSERT ON leave_dates
-    FOR EACH ROW
-    EXECUTE PROCEDURE insert_leave_full_timer();
-
-
 CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $ret$
     DECLARE num1 NUMERIC;
     BEGIN
@@ -282,6 +265,6 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
 $ret$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_leave_full_timer
-    AFTER INSERT OR UPDATE ON leave_dates
+    BEFORE INSERT leave_dates
     FOR EACH ROW
     EXECUTE PROCEDURE check_insert_leave_full_timer();
