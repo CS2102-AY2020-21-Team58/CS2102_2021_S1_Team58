@@ -272,6 +272,15 @@ CREATE TRIGGER insert_leave_full_timer
 CREATE OR REPLACE FUNCTION check_and_merge_availability() RETURNS trigger AS $ret$
 DECLARE date1 DATE;
 BEGIN
+    IF (EXISTS(SELECT 1 FROM available_dates
+                WHERE username = NEW.username
+                  AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                           OR (NEW.start_period BETWEEN start_period AND end_period)
+                           OR (NEW.end_period BETWEEN start_period AND end_period))
+              )
+        ) THEN RETURN NULL;
+    END IF;
+
     IF (EXISTS(SELECT 1 FROM available_dates WHERE start_period - 1 = NEW.end_period AND username = NEW.username))
     THEN NEW.end_period := (SELECT end_period FROM available_dates WHERE start_period - 1 = NEW.end_period
                                                                      AND username = NEW.username LIMIT 1);
