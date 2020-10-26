@@ -213,7 +213,7 @@ CREATE OR REPLACE FUNCTION update_avg_rating() RETURNS trigger AS $ret$
         ELSE
         RETURN NEW;
         END IF;
- 	END;    
+ 	END;
  $ret$ LANGUAGE plpgsql;
 
  CREATE TRIGGER update_rating
@@ -247,3 +247,41 @@ CREATE TRIGGER decline_clashing_bids
 	EXECUTE PROCEDURE decline_clashing();
 
      
+CREATE OR REPLACE FUNCTION insert_leave_full_timer() RETURNS trigger AS $$
+    BEGIN
+        IF NEW.username IN (SELECT username FROM full_timers) AND 
+            (SELECT COUNT(*) FROM bookings WHERE NEW.username = bookings.caretaker AND status = 'ACCEPTED') > 0
+            RETURN NULL;
+        END IF;
+        RETURN NEW;
+    END;
+$$ LANGUAGE plpgsql;
+    
+CREATE TRIGGER check_insert_leave_full_timer
+    AFTER INSERT ON leave_dates
+    FOR EACH ROW
+    EXECUTE PROCEDURE insert_leave_full_timer();
+
+
+CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $ret$
+    DECLARE num1 NUMERIC;
+    BEGIN
+        SELECT COUNT(*) INTO num1 
+        FROM bookings 
+        WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username) 
+            AND NEW.username = bookings.caretaker 
+            AND status = 'ACCEPTED' 
+            AND date(NEW.start_period) >= date(bookings.start_period) 
+            AND date(NEW.end_period) <= date(bookings.end_period);
+        IF (num1 > 0) THEN
+            RETURN NULL;
+        ELSE
+            RETURN NEW;
+        END IF;
+    END;
+$ret$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_leave_full_timer
+    AFTER INSERT OR UPDATE ON leave_dates
+    FOR EACH ROW
+    EXECUTE PROCEDURE check_insert_leave_full_timer();
