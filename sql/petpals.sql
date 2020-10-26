@@ -252,13 +252,24 @@ CREATE TRIGGER decline_clashing_bids
 CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $ret$
     DECLARE num1 NUMERIC;
     BEGIN
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                   WHERE username = NEW.username
+                     AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                       OR (NEW.start_period BETWEEN start_period AND end_period)
+                       OR (NEW.end_period BETWEEN start_period AND end_period))
+            )
+            ) THEN RETURN NULL;
+        END IF;
+
         SELECT COUNT(*) INTO num1 
         FROM bookings 
         WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username) 
             AND NEW.username = bookings.caretaker 
             AND status = 'ACCEPTED' 
-            AND date(NEW.start_period) >= date(bookings.start_period) 
-            AND date(NEW.end_period) <= date(bookings.end_period);
+            AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                OR (NEW.start_period BETWEEN start_period AND end_period)
+                OR (NEW.end_period BETWEEN start_period AND end_period));
+        
         IF (num1 > 0) THEN
             RETURN NULL;
         ELSE
