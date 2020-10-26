@@ -3,16 +3,14 @@ const sql = {}
 sql.query = {
 
     // ABDULHUSEIN
-    // Variables: $1 = Date in the month for which you need the data - give full date in YYYY-MM-DD format, $2 = caretaker,
-
-    //retrieve the number of reviews of a particular caretaker
-    ret_num_reviews: 'SELECT COUNT(*) FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL',
-
-    // Total number of pets taken care of in a particular month. 
-    get_total_pets_cared_in_month = 'SELECT count(*) FROM bookings WHERE DATE_PART(\'month\', TIMESTAMP $1) = $2 GROUP BY date;'
-    get_total_pets_cared_in_month1 = 'SELECT count(*) FROM bookings WHERE EXTRACT(MONTH FROM date) = $2 GROUP BY date;'
-
-    
+    // Variable: $1 = month INTEGER
+    pets_taken_care_in_month: '\
+    SELECT COUNT(*)\
+    FROM bookings b1\
+    WHERE status = \'ACCEPTED\' AND (DATE_PART(\'month\', b1.start_period) = $1 AND DATE_PART(\'month\', b1.end_period) = $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) < $1 AND DATE_PART(\'month\', b1.end_period) > $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) < $1 AND DATE_PART(\'month\', b1.end_period) = $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) = $1 AND DATE_PART(\'month\', b1.end_period) > $1)',
 
     // AAKANKSHA
     //LOGIN: returns 1 if username-password combination exists. Get all details
