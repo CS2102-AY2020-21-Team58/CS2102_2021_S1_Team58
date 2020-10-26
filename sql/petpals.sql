@@ -286,9 +286,10 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
                 RETURN NULL;
             END IF;
 
-            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year1)) THEN
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year1) AND username = NEW.username) THEN
                 SELECT end_period INTO date1 FROM leave_dates
                 WHERE EXTRACT(YEAR FROM end_period) = year1
+                  AND username = NEW.username
                 ORDER BY end_period DESC
                 LIMIT 1;
 
@@ -301,9 +302,10 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
                 END IF;
             END IF;
 
-            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year2)) THEN
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year2) AND username = NEW.username) THEN
                 SELECT start_period INTO date2 FROM leave_dates
                 WHERE EXTRACT(YEAR FROM end_period) = year2
+                  AND username = NEW.username
                 ORDER BY end_period ASC
                 LIMIT 1;
 
@@ -315,6 +317,8 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
                     RETURN NULL;
                 END IF;
             END IF;
+
+            RETURN NEW;
         END IF;
 
         RETURN NEW;
