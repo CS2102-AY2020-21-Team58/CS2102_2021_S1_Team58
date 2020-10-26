@@ -141,18 +141,18 @@ CREATE OR REPLACE FUNCTION update_fulltimer_booking() RETURNS trigger as $ret$
             NOT EXISTS (SELECT *
                         FROM (SELECT NEW.start_period + (interval '1' month * generate_series(0, CAST((DATE_PART('month', NEW.end_period) - DATE_PART('month', NEW.start_period)) AS INTEGER))) AS day) AS interval_months
                         WHERE (SELECT SUM(
-                            CASE
-                            WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', start_period) AND (DATE_PART('month', interval_months.day) < DATE_PART('month', end_period) OR DATE_PART('year', interval_months.day) < DATE_PART('year', end_period)) THEN
-                            DATE_PART('day', (date_trunc('month', start_period) + interval '1 month') - start_period)
-                            WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', end_period) AND (DATE_PART('month', interval_months.day) > DATE_PART('month', start_period) OR DATE_PART('year', interval_months.day) > DATE_PART('year', end_period)) THEN
-                            DATE_PART('day', end_period)
-                            WHEN DATE_PART('month', start_period) = DATE_PART('month', interval_months.day) AND DATE_PART('month', end_period) = DATE_PART('month', interval_months.day) AND DATE_PART('year', start_period) = DATE_PART('year', end_period) THEN
-                            end_period - start_period + 1
-                            WHEN DATE_PART('month', start_period) < DATE_PART('month', interval_months.day) AND DATE_PART('month', end_period) > DATE_PART('month', interval_months.day) AND DATE_PART('year', start_period) <= DATE_PART('year', interval_months.day) AND DATE_PART('year', end_period) >= DATE_PART('year', interval_months.day) THEN
-                            DATE_PART('day', date_trunc('month', interval_months.day) + interval '1 month' - interval '1 day')
-                            END)
+                                    CASE
+                                    WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', start_period) AND (DATE_PART('month', interval_months.day) < DATE_PART('month', end_period) OR DATE_PART('year', interval_months.day) < DATE_PART('year', end_period)) THEN
+                                    DATE_PART('day', (date_trunc('month', start_period) + interval '1 month') - start_period)
+                                    WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', end_period) AND (DATE_PART('month', interval_months.day) > DATE_PART('month', start_period) OR DATE_PART('year', interval_months.day) > DATE_PART('year', end_period)) THEN
+                                    DATE_PART('day', end_period)
+                                    WHEN DATE_PART('month', start_period) = DATE_PART('month', interval_months.day) AND DATE_PART('month', end_period) = DATE_PART('month', interval_months.day) AND DATE_PART('year', start_period) = DATE_PART('year', end_period) THEN
+                                    end_period - start_period + 1
+                                    WHEN DATE_PART('month', start_period) < DATE_PART('month', interval_months.day) AND DATE_PART('month', end_period) > DATE_PART('month', interval_months.day) AND DATE_PART('year', start_period) <= DATE_PART('year', interval_months.day) AND DATE_PART('year', end_period) >= DATE_PART('year', interval_months.day) THEN
+                                    DATE_PART('day', date_trunc('month', interval_months.day) + interval '1 month' - interval '1 day')
+                                    END)
                                 FROM (SELECT * FROM bookings EXCEPT SELECT * FROM bookings WHERE NEW.owner=owner AND NEW.pet_name=pet_name AND NEW.caretaker=caretaker AND NEW.start_period=start_period AND NEW.end_period=end_period) AS b
-                                WHERE caretaker=NEW.caretaker) > 60) AND 
+                                WHERE caretaker=NEW.caretaker AND status='ACCEPTED') > 60) AND 
             NOT EXISTS (SELECT *
                         FROM (SELECT NEW.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', NEW.end_period) AS INTEGER) - CAST(DATE_PART('day', NEW.start_period) AS INTEGER)))) AS days) AS dates
                         WHERE (SELECT COUNT(*) FROM bookings b WHERE b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5)
@@ -224,17 +224,17 @@ CREATE OR REPLACE FUNCTION update_avg_rating() RETURNS trigger AS $ret$
 CREATE OR REPLACE FUNCTION decline_clashing() RETURNS trigger AS $ret$
 	BEGIN
 		IF EXISTS (SELECT 1 FROM full_timers WHERE username=NEW.caretaker)
-          THEN UPDATE bookings b1 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
-                      caretaker=NEW.caretaker AND
-                      EXISTS (SELECT 1
-                              FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
-                              WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
+            THEN UPDATE bookings b1 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
+                caretaker=NEW.caretaker AND
+                EXISTS (SELECT 1
+                    FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
+                    WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
         ELSE
-          UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status=PENDING" AND
-                      caretaker=NEW.caretaker AND
-                      EXISTS (SELECT 1
-                              FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates
-                              WHERE (SELECT COUNT(*) FROM bookings b WHERE b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = (SELECT CASE WHEN (SELECT average_rating FROM caretakers WHERE username=NEW.caretaker) >= 4.0 THEN 4 ELSE 2 END));
+            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status=PENDING" AND
+                caretaker=NEW.caretaker AND
+                EXISTS (SELECT 1
+                    FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates
+                    WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = (SELECT CASE WHEN (SELECT average_rating FROM caretakers WHERE username=NEW.caretaker) >= 4.0 THEN 4 ELSE 2 END));
                       
         END IF;
     RETURN NEW;
