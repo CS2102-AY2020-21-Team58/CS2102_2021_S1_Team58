@@ -31,6 +31,7 @@ CREATE TABLE available_dates (
     username     varchar(64) references part_timers(username),
     start_period date NOT NULL, 
     end_period   date NOT NULL,
+    CHECK (start_period <= end_period),
     PRIMARY KEY(username, start_period, end_period)
 );
 
@@ -38,6 +39,7 @@ CREATE TABLE leave_dates (
     username     varchar(64) references full_timers(username),
     start_period date NOT NULL, 
     end_period   date NOT NULL,
+    CHECK (start_period <= end_period),
     PRIMARY KEY(username, start_period, end_period)
 );
 
@@ -116,6 +118,7 @@ CREATE TABLE bookings (
     bid_rate numeric NOT NULL check(bid_rate >= getMinimumAskingPrice(caretaker, owner, pet_name)),
     rating numeric check(rating >= 0 AND rating <= 5),
     remarks varchar(1000),
+    CHECK (start_period <= end_period),
     FOREIGN KEY(owner, pet_name) references pets(owner, pet_name),
     PRIMARY KEY(owner, pet_name, caretaker, start_period, end_period)
 );
