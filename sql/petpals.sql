@@ -250,7 +250,10 @@ CREATE TRIGGER decline_clashing_bids
 	EXECUTE PROCEDURE decline_clashing();
 
 CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $ret$
-    DECLARE num1 NUMERIC;
+    DECLARE year1 INT;
+    DECLARE year2 INT;
+    DECLARE date1 DATE;
+    DECLARE date2 DATE;
     BEGIN
         IF (EXISTS(SELECT 1 FROM leave_dates
                    WHERE username = NEW.username
@@ -270,7 +273,51 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
                        OR (NEW.end_period BETWEEN start_period AND end_period))))
             THEN RETURN NULL;
         END IF;
-    
+
+        year1 := EXTRACT(YEAR FROM NEW.start_period);
+        year2 := EXTRACT(YEAR FROM NEW.end_period);
+
+        IF (year1 < year2) THEN
+            IF (year1 < year2 - 1) THEN
+                RETURN NULL;
+            END IF;
+
+            IF (NEW.start_period - make_date(year1, 1, 1) < 300 OR make_date(year2, 12, 31) - NEW.end_period < 300) THEN
+                RETURN NULL;
+            END IF;
+
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year1)) THEN
+                SELECT end_period INTO date1 FROM leave_dates
+                WHERE EXTRACT(YEAR FROM end_period) = year1
+                ORDER BY end_period DESC
+                LIMIT 1;
+
+                date2 := make_date(year1, 12, 31);
+                IF (date2 - date1 >= 300 AND NEW.start_period - date1 < 301) THEN
+                    RETURN NULL;
+                END IF;
+                IF (date2 - date1 >= 150 AND NEW.start_period - date1 < 151) THEN
+                    RETURN NULL;
+                END IF;
+            END IF;
+
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year2)) THEN
+                SELECT start_period INTO date2 FROM leave_dates
+                WHERE EXTRACT(YEAR FROM end_period) = year2
+                ORDER BY end_period ASC
+                LIMIT 1;
+
+                date1 := make_date(year2, 1, 1);
+                IF (date2 - date1 >= 300 AND date2 - NEW.end_period < 301) THEN
+                    RETURN NULL;
+                END IF;
+                IF (date2 - date1 >= 150 AND date2 - NEW.end_period < 151) THEN
+                    RETURN NULL;
+                END IF;
+            END IF;
+        END IF;
+
+        RETURN NEW;
     END;
 $ret$ LANGUAGE plpgsql;
 
