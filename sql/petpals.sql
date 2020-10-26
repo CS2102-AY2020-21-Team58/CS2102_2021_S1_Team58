@@ -31,6 +31,7 @@ CREATE TABLE available_dates (
     username     varchar(64) references part_timers(username),
     start_period date NOT NULL, 
     end_period   date NOT NULL,
+    CHECK (start_period <= end_period),
     PRIMARY KEY(username, start_period, end_period)
 );
 
@@ -38,6 +39,7 @@ CREATE TABLE leave_dates (
     username     varchar(64) references full_timers(username),
     start_period date NOT NULL, 
     end_period   date NOT NULL,
+    CHECK (start_period <= end_period),
     PRIMARY KEY(username, start_period, end_period)
 );
 
@@ -116,6 +118,7 @@ CREATE TABLE bookings (
     bid_rate numeric NOT NULL check(bid_rate >= getMinimumAskingPrice(caretaker, owner, pet_name)),
     rating numeric check(rating >= 0 AND rating <= 5),
     remarks varchar(1000),
+    CHECK (start_period <= end_period),
     FOREIGN KEY(owner, pet_name) references pets(owner, pet_name),
     PRIMARY KEY(owner, pet_name, caretaker, start_period, end_period)
 );
@@ -246,42 +249,155 @@ CREATE TRIGGER decline_clashing_bids
 	FOR EACH ROW
 	EXECUTE PROCEDURE decline_clashing();
 
-     
-CREATE OR REPLACE FUNCTION insert_leave_full_timer() RETURNS trigger AS $$
-    BEGIN
-        IF NEW.username IN (SELECT username FROM full_timers) AND 
-            (SELECT COUNT(*) FROM bookings WHERE NEW.username = bookings.caretaker AND status = 'ACCEPTED') > 0
-            RETURN NULL;
-        END IF;
-        RETURN NEW;
-    END;
-$$ LANGUAGE plpgsql;
-    
-CREATE TRIGGER check_insert_leave_full_timer
-    AFTER INSERT ON leave_dates
-    FOR EACH ROW
-    EXECUTE PROCEDURE insert_leave_full_timer();
-
-
 CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $ret$
-    DECLARE num1 NUMERIC;
+    DECLARE year1 INT;
+    DECLARE year2 INT;
+    DECLARE date1 DATE;
+    DECLARE date2 DATE;
     BEGIN
-        SELECT COUNT(*) INTO num1 
-        FROM bookings 
-        WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username) 
-            AND NEW.username = bookings.caretaker 
-            AND status = 'ACCEPTED' 
-            AND date(NEW.start_period) >= date(bookings.start_period) 
-            AND date(NEW.end_period) <= date(bookings.end_period);
-        IF (num1 > 0) THEN
-            RETURN NULL;
-        ELSE
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                   WHERE username = NEW.username
+                     AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                       OR (NEW.start_period BETWEEN start_period AND end_period)
+                       OR (NEW.end_period BETWEEN start_period AND end_period))
+            )
+            ) THEN RETURN NULL;
+        END IF;
+        
+        IF (EXISTS(SELECT 1 FROM bookings
+                   WHERE EXISTS (SELECT 1 FROM full_timers WHERE NEW.username = full_timers.username)
+                     AND NEW.username = bookings.caretaker
+                     AND status = 'ACCEPTED'
+                     AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                       OR (NEW.start_period BETWEEN start_period AND end_period)
+                       OR (NEW.end_period BETWEEN start_period AND end_period))))
+            THEN RETURN NULL;
+        END IF;
+
+        year1 := EXTRACT(YEAR FROM NEW.start_period);
+        year2 := EXTRACT(YEAR FROM NEW.end_period);
+
+        IF (year1 < year2) THEN
+            IF (year1 < year2 - 1) THEN
+                RETURN NULL;
+            END IF;
+
+            IF (NEW.start_period - make_date(year1, 1, 1) < 300 OR make_date(year2, 12, 31) - NEW.end_period < 300) THEN
+                RETURN NULL;
+            END IF;
+
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year1) AND username = NEW.username) THEN
+                SELECT end_period INTO date1 FROM leave_dates
+                WHERE EXTRACT(YEAR FROM end_period) = year1
+                  AND username = NEW.username
+                ORDER BY end_period DESC
+                LIMIT 1;
+
+                date2 := make_date(year1, 12, 31);
+                IF (date2 - date1 >= 300 AND NEW.start_period - date1 < 301) THEN
+                    RETURN NULL;
+                END IF;
+                IF (date2 - date1 >= 150 AND NEW.start_period - date1 < 151) THEN
+                    RETURN NULL;
+                END IF;
+            END IF;
+
+            IF (EXISTS(SELECT 1 FROM leave_dates WHERE EXTRACT(YEAR FROM end_period) = year2) AND username = NEW.username) THEN
+                SELECT start_period INTO date2 FROM leave_dates
+                WHERE EXTRACT(YEAR FROM end_period) = year2
+                  AND username = NEW.username
+                ORDER BY end_period ASC
+                LIMIT 1;
+
+                date1 := make_date(year2, 1, 1);
+                IF (date2 - date1 >= 300 AND date2 - NEW.end_period < 301) THEN
+                    RETURN NULL;
+                END IF;
+                IF (date2 - date1 >= 150 AND date2 - NEW.end_period < 151) THEN
+                    RETURN NULL;
+                END IF;
+            END IF;
+
             RETURN NEW;
         END IF;
+
+
+        date1 := make_date(year1, 1, 1);
+        date2 := make_date(year1, 12, 31);
+
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                                  WHERE EXTRACT(YEAR FROM end_period) = year1
+                                    AND username = NEW.username
+                                    AND end_period < NEW.start_period)) THEN
+            date1 := (SELECT end_period + 1 FROM leave_dates
+                      WHERE EXTRACT(YEAR FROM end_period) = year1
+                        AND username = NEW.username
+                        AND end_period < NEW.start_period
+                      ORDER BY end_period DESC
+                      LIMIT 1);
+        END IF;
+
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                   WHERE EXTRACT(YEAR FROM end_period) = year1
+                     AND username = NEW.username
+                     AND start_period > NEW.end_period)) THEN
+            date2 := (SELECT start_period - 1 FROM leave_dates
+                      WHERE EXTRACT(YEAR FROM start_period) = year1
+                        AND username = NEW.username
+                        AND start_period > NEW.end_period
+                      ORDER BY start_period ASC
+                      LIMIT 1);
+        END IF;
+
+        IF (date2 - date1 >= 149 AND NEW.start_period - date1 < 150 AND date2 - NEW.end_period < 150) THEN
+            RETURN NULL;
+        END IF;
+
+        IF (date2 - date1 >= 299 AND NEW.start_period - date1 < 150 AND date2 - NEW.end_period < 300) THEN
+            RETURN NULL;
+        END IF;
+
+        IF (date2 - date1 >= 299 AND NEW.start_period - date1 < 300 AND date2 - NEW.end_period < 150) THEN
+            RETURN NULL;
+        END IF;
+
+        RETURN NEW;
     END;
 $ret$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_leave_full_timer
-    AFTER INSERT OR UPDATE ON leave_dates
+    BEFORE INSERT ON leave_dates
     FOR EACH ROW
     EXECUTE PROCEDURE check_insert_leave_full_timer();
+
+CREATE OR REPLACE FUNCTION check_and_merge_availability() RETURNS trigger AS $ret$
+DECLARE date1 DATE;
+BEGIN
+    IF (EXISTS(SELECT 1 FROM available_dates
+                WHERE username = NEW.username
+                  AND ((NEW.start_period <= start_period AND NEW.end_period >= start_period)
+                           OR (NEW.start_period BETWEEN start_period AND end_period)
+                           OR (NEW.end_period BETWEEN start_period AND end_period))
+              )
+        ) THEN RETURN NULL;
+    END IF;
+
+    IF (EXISTS(SELECT 1 FROM available_dates WHERE start_period - 1 = NEW.end_period AND username = NEW.username))
+    THEN NEW.end_period := (SELECT end_period FROM available_dates WHERE start_period - 1 = NEW.end_period
+                                                                     AND username = NEW.username LIMIT 1);
+    DELETE FROM available_dates WHERE end_period = NEW.end_period AND username = NEW.username;
+    END IF;
+    IF (EXISTS(SELECT 1 FROM available_dates WHERE end_period + 1 = NEW.start_period AND username = NEW.username))
+    THEN NEW.start_period := (SELECT start_period FROM available_dates WHERE end_period + 1 = NEW.start_period
+                                                                         AND username = NEW.username LIMIT 1);
+    DELETE FROM available_dates WHERE start_period = NEW.start_period AND username = NEW.username;
+    END IF;
+    RETURN NEW;
+END;
+$ret$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_availability
+    BEFORE INSERT ON available_dates
+    FOR EACH ROW
+EXECUTE PROCEDURE check_and_merge_availability();
+
