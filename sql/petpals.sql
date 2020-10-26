@@ -120,7 +120,6 @@ CREATE TABLE bookings (
     PRIMARY KEY(owner, pet_name, caretaker, start_period, end_period)
 );
 
-<<<<<<< HEAD
 CREATE OR REPLACE FUNCTION update_caretaker_rates_on_new() RETURNS trigger AS $ret$
 	BEGIN
 		UPDATE handles
@@ -169,7 +168,6 @@ CREATE TRIGGER direct_accept
     EXECUTE PROCEDURE update_fulltimer_booking();
 
 
-=======
 CREATE OR REPLACE FUNCTION not_full_timer() RETURNS TRIGGER AS $trig$
 DECLARE ctx NUMERIC;
 BEGIN
@@ -222,5 +220,30 @@ CREATE OR REPLACE FUNCTION update_avg_rating() RETURNS trigger AS $ret$
  	AFTER INSERT OR UPDATE ON bookings
  	FOR EACH ROW
  	EXECUTE PROCEDURE update_avg_rating();
+
+CREATE OR REPLACE FUNCTION decline_clashing() RETURNS trigger AS $ret$
+	BEGIN
+		IF EXISTS (SELECT 1 FROM full_timers WHERE username=NEW.caretaker)
+          THEN UPDATE bookings b1 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
+                      caretaker=NEW.caretaker AND
+                      EXISTS (SELECT 1
+                              FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
+                              WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
+        ELSE
+          UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status=PENDING" AND
+                      caretaker=NEW.caretaker AND
+                      EXISTS (SELECT 1
+                              FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates
+                              WHERE (SELECT COUNT(*) FROM bookings b WHERE b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = (SELECT CASE WHEN (SELECT average_rating FROM caretakers WHERE username=NEW.caretaker) >= 4.0 THEN 4 ELSE 2 END));
+                      
+        END IF;
+    RETURN NEW;
+	END;    
+$ret$ LANGUAGE plpgsql;
+
+CREATE TRIGGER decline_clashing_bids
+	AFTER UPDATE OF "status" ON bookings
+	FOR EACH ROW
+	EXECUTE PROCEDURE decline_clashing();
+
      
->>>>>>> master
