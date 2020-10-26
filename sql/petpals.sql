@@ -321,6 +321,46 @@ CREATE OR REPLACE FUNCTION check_insert_leave_full_timer() RETURNS trigger AS $r
             RETURN NEW;
         END IF;
 
+
+        date1 := make_date(year1, 1, 1);
+        date2 := make_date(year1, 12, 31);
+
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                                  WHERE EXTRACT(YEAR FROM end_period) = year1
+                                    AND username = NEW.username
+                                    AND end_period < NEW.start_period)) THEN
+            date1 := (SELECT end_period + 1 FROM leave_dates
+                      WHERE EXTRACT(YEAR FROM end_period) = year1
+                        AND username = NEW.username
+                        AND end_period < NEW.start_period
+                      ORDER BY end_period DESC
+                      LIMIT 1);
+        END IF;
+
+        IF (EXISTS(SELECT 1 FROM leave_dates
+                   WHERE EXTRACT(YEAR FROM end_period) = year1
+                     AND username = NEW.username
+                     AND start_period > NEW.end_period)) THEN
+            date2 := (SELECT start_period - 1 FROM leave_dates
+                      WHERE EXTRACT(YEAR FROM start_period) = year1
+                        AND username = NEW.username
+                        AND start_period > NEW.end_period
+                      ORDER BY start_period ASC
+                      LIMIT 1);
+        END IF;
+
+        IF (date2 - date1 >= 149 AND NEW.start_period - date1 < 150 AND date2 - NEW.end_period < 150) THEN
+            RETURN NULL;
+        END IF;
+
+        IF (date2 - date1 >= 299 AND NEW.start_period - date1 < 150 AND date2 - NEW.end_period < 300) THEN
+            RETURN NULL;
+        END IF;
+
+        IF (date2 - date1 >= 299 AND NEW.start_period - date1 < 300 AND date2 - NEW.end_period < 150) THEN
+            RETURN NULL;
+        END IF;
+
         RETURN NEW;
     END;
 $ret$ LANGUAGE plpgsql;
