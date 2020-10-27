@@ -5,8 +5,7 @@ const STATUS_DECLINED = "DECLINED";
 module.exports.sql = sql = {};
 
 sql.query = {
-
-    // ABDULHUSEIN
+    
     // Variable: $1 = month INTEGER
     pets_taken_care_in_month: '\
     SELECT COUNT(*)\
@@ -38,7 +37,6 @@ sql.query = {
     ORDER BY jobs \
     DESC LIMIT 1;',
 
-    // AAKANKSHA
     //LOGIN: returns 1 if username-password combination exists. Get all details
     check_login_details: 'SELECT 1 FROM users WHERE username=$1 AND password=$2',
     get_user_details: 'SELECT * FROM users WHERE username=$1',
@@ -600,8 +598,6 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
         END) \
     FROM bookings \
     WHERE caretaker = C.username AND status = \'ACCEPTED\') IS NULL) AS salaries',
-
-    // ABHIMAN
 
     // $1 = Date in the month for which you need the data - give full date in YYYY-MM-DD format.
     caretakers_with_below_60: `SELECT DISTINCT u.username, u.first_name, (CASE WHEN b.sum IS NULL THEN 0 ELSE b.sum END) AS Days \
