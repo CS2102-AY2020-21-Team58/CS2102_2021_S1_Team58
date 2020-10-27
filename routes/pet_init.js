@@ -43,6 +43,20 @@ function register_user(req, res, next) {
     const location = req.body.location;
     const cardNumber = req.body.card;
     const type = req.body.type;
+    let secondaryQuery;
+
+    if(type=="Administrator") {
+        secondaryQuery = queries.add_admin;
+    } else if (type=="Full_Timer") {    
+        secondaryQuery = queries.add_full_timer;
+    } else if (type=="Part_Timer") {
+        secondaryQuery = queries.add_part_timer;
+    } else if (type=="Owner") {
+        secondaryQuery = queries.add_pet_owner;
+    } else {
+        res.status(400).send("Incorrect user type");
+        return;
+    }
 
     pool
         .query(queries.add_user, [username, password, full_name, location, cardNumber])
@@ -66,13 +80,12 @@ function login(req, res, next) {
                 console.log("Log in failed!");
             } else {
                 res.status(200).json({ message: "Successfully logged in!" });
-                console.log(result);
                 console.log("Logged in!");
             }
         })
         .catch(error => { 
-            res.status(404).send(error);
-            console.log("Error encountered");
+            res.status(404).json({ message: "Encountered problem while authenticating." }).send(error);
+            console.log(error);
         });
 }
 
