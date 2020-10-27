@@ -60,9 +60,11 @@ function basic(req, res, page, other) {
 	}
 	res.render(page, info);
 }
+
 function query(req, fld) {
 	return req.query[fld] ? req.query[fld] : '';
 }
+
 function msg(req, fld, pass, fail) {
 	var info = query(req, fld);
 	return info ? (info=='pass' ? pass : fail) : '';
@@ -96,6 +98,7 @@ function index(req, res, next) {
 		});
 	});
 }
+
 function search(req, res, next) {
 	var ctx  = 0, avg = 0, tbl;
 	var game = "%" + req.query.gamename.toLowerCase() + "%";
