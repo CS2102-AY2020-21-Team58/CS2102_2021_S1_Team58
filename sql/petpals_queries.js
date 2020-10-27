@@ -6,8 +6,37 @@ module.exports.sql = sql = {};
 
 sql.query = {
 
-    // ABDUL
-    
+    // ABDULHUSEIN
+    // Variable: $1 = month INTEGER
+    pets_taken_care_in_month: '\
+    SELECT COUNT(*)\
+    FROM bookings b1\
+    WHERE status = \'ACCEPTED\' AND (DATE_PART(\'month\', b1.start_period) = $1 AND DATE_PART(\'month\', b1.end_period) = $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) < $1 AND DATE_PART(\'month\', b1.end_period) > $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) < $1 AND DATE_PART(\'month\', b1.end_period) = $1) OR \
+                                (DATE_PART(\'month\', b1.start_period) = $1 AND DATE_PART(\'month\', b1.end_period) > $1)',
+
+    get_month_where_max_pets_taken_care: '\
+    SELECT month \
+    FROM \
+        (SELECT SUM(count1) AS jobs, month \
+        FROM \
+            (SELECT COUNT(*) AS count1, DATE_PART(\'month\', b1.start_period) AS month \
+                            FROM bookings b1 GROUP BY DATE_PART(\'month\', b1.start_period) \
+            UNION ALL \
+            SELECT COUNT(*) AS count2, DATE_PART(\'month\', b1.end_period) AS month \
+                                    FROM bookings b1 \
+                                    WHERE DATE_PART(\'month\', b1.start_period) <> DATE_PART(\'month\', b1.end_period) \
+                                    GROUP BY DATE_PART(\'month\', b1.end_period) \
+            UNION ALL \
+            SELECT COUNT(*) AS count3, DATE_PART(\'month\', month) AS month \
+                                FROM (SELECT generate_series(date_trunc(\'month\',  start_period), end_period, \'1 month\')::date as month \
+                                        FROM bookings \
+                                        WHERE  DATE_PART(\'month\', end_period) - DATE_PART(\'month\', start_period) > 1) as temp \
+                                        GROUP BY DATE_PART(\'month\', month)) as temp \
+        GROUP BY month) as ans \
+    ORDER BY jobs \
+    DESC LIMIT 1;',
 
     // AAKANKSHA
     //LOGIN: returns 1 if username-password combination exists. Get all details
@@ -618,8 +647,55 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // $2 = Date in the month for which you need the data
     accepted_bids_for_month: `SELECT caretaker, owner, pet_name, start_period, end_period, payment_method, delivery_method, bid_rate, rating, remarks \
                             FROM bookings \
-                            WHERE caretaker = $1 AND (DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', start_period) OR DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', end_period)) AND DATE_PART(\'year\', TIMESTAMP $2) = DATE_PART(\'year\', start_period) AND status = ${STATUS_ACCEPTED}`
+                            WHERE caretaker = $1 AND (DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', start_period) OR DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', end_period)) AND DATE_PART(\'year\', TIMESTAMP $2) = DATE_PART(\'year\', start_period) AND status = ${STATUS_ACCEPTED}`,
 
-    // WEI YANG
 
-};
+    // search_caretaker: search for caretakers available during entire period,
+    // with less than 2/4/5 pets every day (for part-time/part-time rated 4/full time),
+    // matches bid price and services
+
+    // variables: $1 start date, $2 end date, $3 owner username, $4 pet name, $5 max price
+    search_caretaker: 'SELECT username, first_name FROM users U WHERE $1 <= $2 \
+    AND ((EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) \
+                    AND NOT EXISTS(SELECT 1 FROM leave_dates L WHERE L.username = U.username\
+                                AND (L.start_period BETWEEN $1 AND $2\
+                                    OR L.end_period BETWEEN $1 AND $2\
+                                    OR (L.start_period <= $1 AND L.end_period >= $1)\
+                                    )\
+                    )\
+                )\
+            OR (EXISTS(SELECT 1 FROM part_timers P WHERE P.username = U.username)\
+                AND EXISTS(SELECT 1 FROM available_dates A\
+                            WHERE A.start_period <= $1\
+                                AND A.end_period >= $2\
+                                AND A.username = U.username)\
+                )\
+    )\
+    AND NOT EXISTS (SELECT CURRENT_DATE + i \
+                    FROM generate_series(date $1 - CURRENT_DATE, date $2 - CURRENT_DATE) i\
+                         WHERE (SELECT COUNT(*) FROM bookings B\
+                                WHERE B.status = \'accepted\'\
+                                AND B.caretaker = U.username\
+                                AND CURRENT_DATE + i BETWEEN B.start_period AND B.end_period) >=\
+                                (SELECT CASE\
+                                  WHEN EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) THEN 5\
+                                  WHEN (SELECT C.average_rating FROM caretakers C WHERE C.username = U.username) >= 4 THEN 4\
+                                  ELSE 2\
+                                  END\
+                                )\
+\
+    )\
+    AND EXISTS (SELECT 1 FROM handles H WHERE H.caretaker = U.username\
+                AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
+                AND H.price <= $5)\
+\
+    AND NOT EXISTS (SELECT 1 FROM requires R\
+                    WHERE R.pet_name = $4 AND R.owner = $3\
+                    AND NOT EXISTS (SELECT 1 FROM provides P\
+                                        WHERE P.caretaker = U.username\
+                                        AND P.service_name = R.service_name\
+                                        AND P.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
+                                        )\
+                      )\
+    '
+}
