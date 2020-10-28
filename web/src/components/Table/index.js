@@ -6,9 +6,9 @@ import {Table as TableBS} from 'react-bootstrap';
 const Table = props => {
   const {data: propsData, columns: propsCol} = props;
   // eslint-disable-next-line
-  const data = React.useMemo(() => propsData, []);
+  const data = React.useMemo(() => propsData, [propsData]);
   // eslint-disable-next-line
-  const columns = React.useMemo(() => propsCol, []);
+  const columns = React.useMemo(() => propsCol, [propsCol]);
   const tableInstance = useTable({columns, data});
 
   const {
@@ -19,7 +19,9 @@ const Table = props => {
     prepareRow,
   } = tableInstance;
 
-  return (
+  return data.length === 0 ? (
+    <p>No results for the selected table</p>
+  ) : (
     <TableBS striped hover {...getTableProps()}>
       <thead>
         {headerGroups.map(headerGroup => (
