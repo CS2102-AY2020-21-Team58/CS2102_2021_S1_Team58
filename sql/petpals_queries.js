@@ -47,7 +47,7 @@ sql.query = {
     //Insert a pet owner
     add_pet_owner: 'INSERT INTO owners (username) VALUES($1)',
     //Insert a care taker
-    add_care_taker: 'INSERT INTO caretakers (username, average_rating) VALUES($1, $2)',
+    add_care_taker: 'INSERT INTO caretakers (username) VALUES($1)',
     //Insert a part time caretaker
     add_part_timer: 'INSERT INTO part_timers (username) VALUES($1)',
     //Insert a full time care taker
@@ -71,7 +71,8 @@ sql.query = {
     //Add availability for part time care taker
     add_availability: 'INSERT INTO available_dates(username, start_period, end_period) VALUES ($1, $2, $3)',
     //Add a booking
-    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL )',
+    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, $10, $11 )',
+    add_initial_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, NULL, NULL)',
     
     //UPDATES
     //Add rating

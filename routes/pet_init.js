@@ -22,15 +22,13 @@ module.exports.initRouter = function initRouter(app) {
     // POST Methods
     app.post('/register', register_user);
     app.post('/login', login);
+    app.post('/createbid', create_bid);
 
     // GET Methods
-    app.get('/route/:id/:name', function_name); // This is an example.
 
     // UPDATE Methods
-    app.put('/route', function_name); // This is an example.
 
     // DELETE Methods
-    app.delete('/route/:id/:name', function_name); // This is an example.
 
 }
 
@@ -51,27 +49,39 @@ function register_user(req, res, next) {
     if(type=="Administrator") {
         secondaryQuery = queries.add_admin;
     } else if (type=="Full_Timer") {    
-        secondaryQuery = queries.add_full_timer;
+        secondaryQuery = queries.add_care_taker;
     } else if (type=="Part_Timer") {
-        secondaryQuery = queries.add_part_timer;
+        secondaryQuery = queries.add_care_taker;
     } else if (type=="Owner") {
         secondaryQuery = queries.add_pet_owner;
     } else {
-        res.status(400).send("Incorrect user type");
         return;
     }
 
     pool.query(queries.add_user, [username, password, full_name, location, cardNumber])
-        .then(result => res.status(200).json({ message: "User added successfully." }))
         .catch(err => { 
-            res.status(400).send(err);
-            console.log("error encountered");
+            return Promise.reject("Error: User with username already exists!");
         })
-        .then(pool.query(querries.add_care_taker, [username]));
+        .then(() => pool.query(secondaryQuery, [username]))
+        .then(() => {
+            if (type == "Part_Timer") {
+                pool.query(queries.add_part_timer, [username])
+                    .catch(() => Promise.reject("Error: Problem adding caretaker."));
+            } else if (type == "Full_Timer") {
+                pool.query(queries.add_full_timer, [username])
+                    .catch(() => Promise.reject("Error: Problem adding caretaker."));
+            } else {
+                // Do nothing
+            }
+        })
+        .then(() => res.status(200).json({ message: "User added successfully." }))
+        .catch(error => {
+            console.log(error);
+            res.status(400).json({ message: error });
+        });
 }
 
 function login(req, res, next) {
-    console.log(req);
     const username = req.body.username;
     const password = req.body.password;
 
@@ -86,10 +96,33 @@ function login(req, res, next) {
             }
         })
         .catch(error => { 
-            res.status(404).json({ message: "Encountered problem while authenticating." }).send(error);
+            res.status(404).json({ message: "Encountered problem while authenticating.", error: error });
             console.log(error);
         });
 }
 
+function create_bid(req, res, next) {
+    const owner = req.body.owner;
+    const pet_name = req.body.pet_name;
+    const caretaker = req.body.caretaker;
+    const start_period = req.body.start_period;
+    const end_period = req.body.end_period;
+    const payment_method = req.body.payment_method;
+    const delivery_method = req.body.delivery_method;
+    const status = "PENDING";
+    const bid_rate = req.body.bid_rate;
 
+    pool.query(queries.add_initial_booking, [owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate])
+        .then(() => {
+            res.status(200).json({ message: "Booking created!" });
+            console.log("Successfully added booking!");
+        })
+        .catch(err => {
+            res.status(404).json({ message: "Encountered problem while creating bid.", error: err });
+            console.log(err);
+    });
+}
 
+function get_jobs(req, res, next) {
+    const results = [];
+}
