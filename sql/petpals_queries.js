@@ -157,6 +157,7 @@ sql.query = {
     get_pet_owners_pets: 'SELECT * FROM pets WHERE owner = $1',
     //Get all services of a pet
     get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
+    get_all_bookings: 'SELECT * FROM bookings',
     //pet owner views all bookings
     get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
     //pet owner views all pending bookings

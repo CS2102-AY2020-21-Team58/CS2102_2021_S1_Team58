@@ -25,8 +25,12 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/createbid', create_bid);
 
     // GET Methods
+    app.get('/getbookings', get_bookings);
+    app.get('/getbookings/:user/:username', get_user_bookings);
 
     // UPDATE Methods
+    app.put('/reply_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', reply_booking);
+    app.put('/rate_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', rate_booking);
 
     // DELETE Methods
 
@@ -123,6 +127,92 @@ function create_bid(req, res, next) {
     });
 }
 
-function get_jobs(req, res, next) {
-    const results = [];
+function get_user_bookings(req, res, next) {
+    console.log(req.params);
+
+    const user_type = req.params.user;
+    const username = req.params.username;
+    let query = user_type == "owner" ? queries.get_all_pet_owners_bookings : user_type == "caretaker" ? queries.get_all_caretaker_bookings : null;
+
+    pool.query(query, [username])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched booking!");
+        })
+        .catch(err => {
+            res.status(404).json({ message: "Encountered problem fetching bookings.", error: err });
+            console.log(err);
+    });   
+}
+
+function get_bookings(req, res, next) {
+    console.log(req.params);
+
+    pool.query(queries.get_all_bookings)
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched booking!");
+        })
+        .catch(err => {
+            res.status(404).json({ message: "Encountered problem fetching bookings.", error: err });
+            console.log(err);
+    });   
+}
+
+function reply_booking(req, res, next) {
+    const { owner, pet_name, caretaker, start_period, end_period } = req.params;
+    const decision = req.body.decision;
+    const query = decision ? queries.accept_booking : queries.decline_booking;
+
+    pool.query(query, [owner, pet_name, caretaker, start_period, end_period])
+        .then(result => {
+            res.status(200).json({ message: "Booking updated!" });
+            console.log("Successfully updated booking!");
+        })
+        .catch(err => {
+            res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+            console.log(err);
+    }); 
+}
+
+function rate_booking(req, res, next) {
+    const { owner, pet_name, caretaker, start_period, end_period } = req.params;
+    const rating =  req.body["rating"] ? req.body.rating : null;
+    const review =  req.body["review"] ? req.body.review : null;
+
+    if(rating && review) {
+        pool.query(queries.add_review_and_remark, [owner, pet_name, caretaker, start_period, end_period, rating, review])
+            .then(result => {
+                res.status(200).json({ message: "Booking updated!" });
+                console.log("Successfully updated booking!");
+            })
+            .catch(err => {
+                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                console.log(err);
+        }); 
+    }
+
+    if(review) {
+        pool.query(queries.add_remark, [owner, pet_name, caretaker, start_period, end_period, review])
+            .then(result => {
+                res.status(200).json({ message: "Booking updated!" });
+                console.log("Successfully updated booking!");
+            })
+            .catch(err => {
+                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                console.log(err);
+        });
+    }
+
+    if(rating) {
+        pool.query(queries.add_review, [owner, pet_name, caretaker, start_period, end_period, rating])
+            .then(result => {
+                res.status(200).json({ message: "Booking updated!" });
+                console.log("Successfully updated booking!");
+            })
+            .catch(err => {
+                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                console.log(err);
+        });
+    }
 }
