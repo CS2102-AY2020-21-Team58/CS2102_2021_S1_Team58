@@ -36,7 +36,7 @@ sql.query = {
                                         GROUP BY DATE_PART(\'month\', month)) as temp \
         GROUP BY month) as ans \
     ORDER BY jobs \
-    DESC LIMIT 1;'
+    DESC LIMIT 1;',
 
     // AAKANKSHA
     //LOGIN: returns 1 if username-password combination exists. Get all details
@@ -647,7 +647,7 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // $2 = Date in the month for which you need the data
     accepted_bids_for_month: `SELECT caretaker, owner, pet_name, start_period, end_period, payment_method, delivery_method, bid_rate, rating, remarks \
                             FROM bookings \
-                            WHERE caretaker = $1 AND (DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', start_period) OR DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', end_period)) AND DATE_PART(\'year\', TIMESTAMP $2) = DATE_PART(\'year\', start_period) AND status = ${STATUS_ACCEPTED}`
+                            WHERE caretaker = $1 AND (DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', start_period) OR DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', end_period)) AND DATE_PART(\'year\', TIMESTAMP $2) = DATE_PART(\'year\', start_period) AND status = ${STATUS_ACCEPTED}`,
 
 
     // search_caretaker: search for caretakers available during entire period,
