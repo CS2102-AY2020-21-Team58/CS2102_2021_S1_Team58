@@ -7,9 +7,9 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'me',
+    password: 'my_password',
     host: 'localhost',
     database: 'petpals',
-    password: 'my_password',
     port: 5432
 });
 
@@ -24,10 +24,13 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/login', login);
 
     // GET Methods
+    app.get('/route/:id/:name', function_name); // This is an example.
 
     // UPDATE Methods
+    app.put('/route', function_name); // This is an example.
 
     // DELETE Methods
+    app.delete('/route/:id/:name', function_name); // This is an example.
 
 }
 
@@ -58,22 +61,21 @@ function register_user(req, res, next) {
         return;
     }
 
-    pool
-        .query(queries.add_user, [username, password, full_name, location, cardNumber])
+    pool.query(queries.add_user, [username, password, full_name, location, cardNumber])
         .then(result => res.status(200).json({ message: "User added successfully." }))
         .catch(err => { 
             res.status(400).send(err);
             console.log("error encountered");
-        });
+        })
+        .then(pool.query(querries.add_care_taker, [username]));
 }
 
 function login(req, res, next) {
-    console.log(req.body);
+    console.log(req);
     const username = req.body.username;
     const password = req.body.password;
 
-    pool
-        .query(queries.check_login_details, [username, password])
+    pool.query(queries.check_login_details, [username, password])
         .then(result => {
             if(!result.rows || result.rowCount==0) {
                 res.status(404).json({ message: "Failed to login user: incorrect credentials" });
