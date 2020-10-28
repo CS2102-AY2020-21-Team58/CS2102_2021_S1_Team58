@@ -60,9 +60,11 @@ function basic(req, res, page, other) {
 	}
 	res.render(page, info);
 }
+
 function query(req, fld) {
 	return req.query[fld] ? req.query[fld] : '';
 }
+
 function msg(req, fld, pass, fail) {
 	var info = query(req, fld);
 	return info ? (info=='pass' ? pass : fail) : '';
@@ -96,6 +98,7 @@ function index(req, res, next) {
 		});
 	});
 }
+
 function search(req, res, next) {
 	var ctx  = 0, avg = 0, tbl;
 	var game = "%" + req.query.gamename.toLowerCase() + "%";
@@ -114,9 +117,11 @@ function search(req, res, next) {
 		}
 	});
 }
+
 function dashboard(req, res, next) {
 	basic(req, res, 'dashboard', { info_msg: msg(req, 'info', 'Information updated successfully', 'Error in updating information'), pass_msg: msg(req, 'pass', 'Password updated successfully', 'Error in updating password'), auth: true });
 }
+
 function games(req, res, next) {
 	var ctx = 0, avg = 0, tbl;
 	pool.query(sql_query.query.avg_rating, [req.user.username], (err, data) => {
@@ -137,6 +142,7 @@ function games(req, res, next) {
 		});
 	});
 }
+
 function plays(req, res, next) {
 	var win = 0, avg = 0, ctx = 0, tbl;
 	pool.query(sql_query.query.count_wins, [req.user.username], (err, data) => {

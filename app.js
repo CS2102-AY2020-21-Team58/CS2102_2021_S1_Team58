@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({
 //require('dotenv').load();
 require('./auth').init(app);
 app.use(session({
-  secret: process.env.SECRET,
+  secret: "Abhiman",
   resave: true,
   saveUninitialized: true
 }))
