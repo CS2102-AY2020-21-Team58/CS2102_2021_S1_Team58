@@ -256,7 +256,8 @@ function rate_booking(req, res, next) {
             .catch(err => {
                 res.status(404).json({ message: "Encountered problem updating booking.", error: err });
                 console.log(err);
-        }); 
+        });
+        return; 
     }
 
     if(review) {
@@ -269,6 +270,7 @@ function rate_booking(req, res, next) {
                 res.status(404).json({ message: "Encountered problem updating booking.", error: err });
                 console.log(err);
         });
+        return;
     }
 
     if(rating) {
@@ -281,5 +283,6 @@ function rate_booking(req, res, next) {
                 res.status(404).json({ message: "Encountered problem updating booking.", error: err });
                 console.log(err);
         });
+        return;
     }
 }
