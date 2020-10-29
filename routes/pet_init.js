@@ -30,7 +30,7 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/caretakers/search/:start_period/:end_period/:owner/:pet_name', get_available_caretakers);
     app.get('/caretakers/part_timers/:username/availability', get_availability);
     app.get('/caretakers/full_timers/:username/leaves', get_leaves);
-    app.get('/caretakers/:username/leaves_availability/', get_leave_or_availability);
+    app.get('/caretakers/:username/leaves_availability', get_leave_or_availability);
 
 
     // UPDATE Methods
@@ -38,7 +38,7 @@ module.exports.initRouter = function initRouter(app) {
     // DELETE Methods
     app.delete('/caretakers/part_timers/:username/availability', delete_availability);
     app.delete('/caretakers/full_timers/:username/leaves', delete_leave);
-    app.delete('/caretakers/:username/leaves_availability/', delete_leave_or_availability);
+    app.delete('/caretakers/:username/leaves_availability', delete_leave_or_availability);
 }
 
 function query(req, fld) {
