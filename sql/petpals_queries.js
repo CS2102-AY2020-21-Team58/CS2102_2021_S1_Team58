@@ -93,7 +93,7 @@ sql.query = {
     //Update location
     update_location: 'UPDATE users SET location = $2  WHERE username = $1',
     //Update rate caretaker
-    update_caretaker_price: 'UPDATE handles SET price = $2 WHERE caretaker = $1 AND animal_name = $2',
+    update_caretaker_price: 'UPDATE handles SET price = $3 WHERE caretaker = $1 AND animal_name = $2',
     //Update average rating
     update_average_rating: 'UPDATE caretakers SET average_rating = $2  WHERE username = $1',
 
@@ -150,6 +150,8 @@ sql.query = {
     get_caretaker_services: 'SELECT * FROM provides WHERE animal_name = $1 AND caretaker = $2',
     //get all care takers that can handle a pet type with prices and average review
     get_caretakers_prices: 'SELECT * FROM caretakers NATURAL JOIN handles WHERE animal_name = $1',
+    //get pet types with prices that a caretaker can handle
+    get_single_caretakers_prices: 'SELECT animal_name, price FROM handles WHERE caretaker = $1',
     //Get all caretakers in the same area as a given pet owner
     get_caretakers_in_area: 'SELECT U2.username FROM users U1, users U2, caretakers C WHERE U1.username = $1 AND C.username = U2.username AND U2.area = U1.area',
     //get pets of a pet owner
