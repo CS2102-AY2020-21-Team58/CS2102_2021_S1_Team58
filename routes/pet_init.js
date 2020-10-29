@@ -6,8 +6,8 @@ const { Pool } = require('pg');
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-	user: 'me',
-    password: 'my_password',
+	user: 'weiyang',
+    password: 'password',
     host: 'localhost',
     database: 'petpals',
     port: 5432
@@ -25,6 +25,8 @@ module.exports.initRouter = function initRouter(app) {
 
     // GET Methods
     app.get('/get_available_caretakers/:start_period/:end_period/:owner/:pet_name', get_available_caretakers);
+    app.get('/get_leave_availability/:username', get_leave_or_availability);
+
 
     // UPDATE Methods
 
@@ -114,4 +116,59 @@ function get_available_caretakers(req, res, next) {
             res.status(404).json({message: "Encountered problem finding available caretakers.", error: err});
             console.log(err);
         });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ */
+function get_leave_or_availability(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+
+    pool.query(queries.check_if_part_timer, [username])
+        .then(result => {
+            if (result.rows[0].count == "1") {
+                pool.query(queries.get_all_part_timer_availability, [username])
+                    .then(result => {
+                    res.status(200).json({ results: result.rows });
+                    console.log("Successfully fetched availability!");
+                    })
+                    .catch(err => {
+                        res.status(404).json({message: "Encountered problem finding availability.", error: err});
+                        console.log(err);
+                    });
+            } else {
+                pool.query(queries.check_if_full_timer, [username])
+                    .then(result => {
+                        if (result.rows[0].count == "1") {
+                            pool.query(queries.get_all_full_timer_leaves, [username])
+                                .then(result => {
+                                    res.status(200).json({results: result.rows});
+                                    console.log("Successfully fetched leaves!");
+                                })
+                                .catch(err => {
+                                    res.status(404).json({
+                                        message: "Encountered problem finding leaves.",
+                                        error: err
+                                    });
+                                    console.log(err);
+                                });
+                        } else {
+                            res.status(404).json({
+                                message: "Encountered problem finding leaves or availability.",
+                                error: "User not a caretaker"
+                            });
+                            console.log("User not a caretaker.");
+                        }
+                    });
+            }
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem finding leaves or availability.", error: err});
+            console.log(err);
+        });
+
 }
