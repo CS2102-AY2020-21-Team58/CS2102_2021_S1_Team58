@@ -670,7 +670,7 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     AND NOT EXISTS (SELECT CURRENT_DATE + i \
                     FROM generate_series(date $1 - CURRENT_DATE, date $2 - CURRENT_DATE) i\
                          WHERE (SELECT COUNT(*) FROM bookings B\
-                                WHERE B.status = \'accepted\'\
+                                WHERE B.status = ${STATUS_ACCEPTED}\
                                 AND B.caretaker = U.username\
                                 AND CURRENT_DATE + i BETWEEN B.start_period AND B.end_period) >=\
                                 (SELECT CASE\
