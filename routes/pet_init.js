@@ -23,16 +23,23 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/register', register_user);
     app.post('/login', login);
     app.post('/caretakers/:username/leaves_availability', add_leave_or_availability);
+    app.post('/caretakers/:username/services', add_caretaker_animals);
+    app.post('/caretakers/:username/services/:animal_name', add_caretaker_services);
 
     // GET Methods
     app.get('/caretakers/search/:start_period/:end_period/:owner/:pet_name', get_available_caretakers);
     app.get('/caretakers/:username/leaves_availability', get_leave_or_availability);
+    app.get('/caretakers/:username/services', get_caretaker_animals);
+    app.get('/caretakers/:username/services/:animal_name', get_caretaker_services);
 
 
     // UPDATE Methods
+    app.delete('/caretakers/:username/services', update_caretaker_price);
 
     // DELETE Methods
     app.delete('/caretakers/:username/leaves_availability', delete_leave_or_availability);
+    app.delete('/caretakers/:username/services', add_caretaker_animals);
+    app.delete('/caretakers/:username/services/:animal_name', add_caretaker_services);
 }
 
 function query(req, fld) {
