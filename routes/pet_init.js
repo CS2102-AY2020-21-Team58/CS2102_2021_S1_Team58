@@ -7,9 +7,9 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'me',
-    password: 'my_password',
+    password: 'password',
     host: 'localhost',
-    database: 'petpals',
+    database: 'petpals_real',
     port: 5432
 });
 
@@ -24,13 +24,14 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/login', login);
 
     // GET Methods
-    app.get('/route/:id/:name', function_name); // This is an example.
+    //month must be month number, year must be year number
+    app.get('/salaryall/:date', get_all_salaries);
 
     // UPDATE Methods
-    app.put('/route', function_name); // This is an example.
+    //app.put('/route', function_name); // This is an example.
 
     // DELETE Methods
-    app.delete('/route/:id/:name', function_name); // This is an example.
+   // app.delete('/route/:id/:name', function_name); // This is an example.
 
 }
 
@@ -89,6 +90,19 @@ function login(req, res, next) {
             res.status(404).json({ message: "Encountered problem while authenticating." }).send(error);
             console.log(error);
         });
+}
+
+function get_all_salaries(req, res, next) {
+    console.log(req.params);
+    const date = "\'" + req.params.date + "\'";
+    console.log(date);
+    let query = queries.get_salary_list;
+    pool.query(query, [date]).then(result => {
+        res.status(200).json({results: result.rows});
+    }).catch(err => {
+        res.status(404).json({message: "Encountered problem fetching salaries.", error: err});
+        console.log(err);
+    });
 }
 
 
