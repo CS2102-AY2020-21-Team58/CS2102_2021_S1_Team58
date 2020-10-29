@@ -36,7 +36,9 @@ module.exports.initRouter = function initRouter(app) {
     // UPDATE Methods
 
     // DELETE Methods
-
+    app.delete('/caretakers/part_timers/:username/availability', delete_availability);
+    app.delete('/caretakers/full_timers/:username/leaves', delete_leaves);
+    app.delete('/caretakers/:username/leaves_availability/', delete_leave_or_availability);
 }
 
 function query(req, fld) {
@@ -182,6 +184,36 @@ function add_leave(req, res, next) {
  * Provide the following in path:
  * username: String
  *
+ * Provide the following in request body:
+ * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ *
+ */
+function delete_leave(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const start_period = req.body.start_period;
+    const end_period = req.body.end_period;
+
+    pool.query(queries.delete_leave, [username, start_period, end_period])
+        .then(result => {
+            res.status(200).json({results: result.rows});
+            console.log("Successfully deleted leave!");
+        })
+        .catch(err => {
+            res.status(404).json({
+                message: "Encountered problem deleting leave.",
+                error: err
+            });
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
  */
 function get_availability(req, res, next) {
     console.log(req);
@@ -190,16 +222,17 @@ function get_availability(req, res, next) {
     pool.query(queries.get_all_part_timer_availability, [username])
         .then(result => {
             res.status(200).json({results: result.rows});
-            console.log("Successfully fetched leaves!");
+            console.log("Successfully fetched availability!");
         })
         .catch(err => {
             res.status(404).json({
-                message: "Encountered problem finding leaves.",
+                message: "Encountered problem finding availability.",
                 error: err
             });
             console.log(err);
         });
 }
+
 
 /**
  *
@@ -220,11 +253,41 @@ function add_availability(req, res, next) {
     pool.query(queries.add_availability, [username, start_period, end_period])
         .then(result => {
             res.status(200).json({results: result.rows});
-            console.log("Successfully added leave!");
+            console.log("Successfully added availability!");
         })
         .catch(err => {
             res.status(404).json({
-                message: "Encountered problem adding leave.",
+                message: "Encountered problem adding availability.",
+                error: err
+            });
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ * Provide the following in request body:
+ * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ *
+ */
+function delete_availability(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const start_period = req.body.start_period;
+    const end_period = req.body.end_period;
+
+    pool.query(queries.delete_availability, [username, start_period, end_period])
+        .then(result => {
+            res.status(200).json({results: result.rows});
+            console.log("Successfully deleted availability!");
+        })
+        .catch(err => {
+            res.status(404).json({
+                message: "Encountered problem deleting availability.",
                 error: err
             });
             console.log(err);
@@ -253,11 +316,11 @@ function add_leave_or_availability(req, res, next) {
                 pool.query(queries.add_availability, [username, start_period, end_period])
                     .then(result => {
                         res.status(200).json({results: result.rows});
-                        console.log("Successfully added leave!");
+                        console.log("Successfully added availability!");
                     })
                     .catch(err => {
                         res.status(404).json({
-                            message: "Encountered problem adding leave.",
+                            message: "Encountered problem adding availability.",
                             error: err
                         });
                         console.log(err);
@@ -290,6 +353,69 @@ function add_leave_or_availability(req, res, next) {
         })
         .catch(err => {
             res.status(404).json({message: "Encountered problem adding leaves or availability.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ * Provide the following in request body:
+ * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ *
+ */
+function delete_leave_or_availability(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const start_period = req.body.start_period;
+    const end_period = req.body.end_period;
+
+    pool.query(queries.check_if_part_timer, [username])
+        .then(result => {
+            if (result.rows[0].count == "1") {
+                pool.query(queries.delete_availability, [username, start_period, end_period])
+                    .then(result => {
+                        res.status(200).json({results: result.rows});
+                        console.log("Successfully deleted availability!");
+                    })
+                    .catch(err => {
+                        res.status(404).json({
+                            message: "Encountered problem deleting availability.",
+                            error: err
+                        });
+                        console.log(err);
+                    });
+            } else {
+                pool.query(queries.check_if_full_timer, [username])
+                    .then(result => {
+                        if (result.rows[0].count == "1") {
+                            pool.query(queries.delete_leave, [username, start_period, end_period])
+                                .then(result => {
+                                    res.status(200).json({results: result.rows});
+                                    console.log("Successfully deleted leave!");
+                                })
+                                .catch(err => {
+                                    res.status(404).json({
+                                        message: "Encountered problem deleting leave.",
+                                        error: err
+                                    });
+                                    console.log(err);
+                                });
+                        } else {
+                            res.status(404).json({
+                                message: "Encountered problem deleting leaves or availability.",
+                                error: "User not a caretaker"
+                            });
+                            console.log("User not a caretaker.");
+                        }
+                    });
+            }
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem deleting leaves or availability.", error: err});
             console.log(err);
         });
 }
