@@ -27,7 +27,6 @@ module.exports.initRouter = function initRouter(app) {
     // GET Methods
     app.get('/getbookings', get_bookings);
     app.get('/getbookings/:user/:username', get_user_bookings);
-    app.get('/getjobs', get_jobs);
 
     // UPDATE Methods
     app.put('/reply_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', reply_booking);
