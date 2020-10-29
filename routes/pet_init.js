@@ -27,6 +27,7 @@ module.exports.initRouter = function initRouter(app) {
     // GET Methods
     app.get('/getbookings', get_bookings);
     app.get('/getbookings/:user/:username', get_user_bookings);
+    app.get('/getjobs', get_jobs);
 
     // UPDATE Methods
     app.put('/reply_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', reply_booking);
@@ -36,10 +37,17 @@ module.exports.initRouter = function initRouter(app) {
 
 }
 
-function query(req, fld) {
-	return req.query[fld] ? req.query[fld] : '';
-}
-
+/**
+ * 
+ * Provide following:
+ * username: String
+ * passowrd: String
+ * full_name: String
+ * location: String
+ * card: integer of 16 digits
+ * type: Administrator OR Full_Timer OR Part_Timer OR Owner
+ * 
+ */
 function register_user(req, res, next) {
     console.log(req.body);
     const username = req.body.username;
@@ -85,6 +93,13 @@ function register_user(req, res, next) {
         });
 }
 
+/**
+ * 
+ * Provide the following:
+ * username: String
+ * password: String
+ * 
+ */
 function login(req, res, next) {
     const username = req.body.username;
     const password = req.body.password;
@@ -105,6 +120,19 @@ function login(req, res, next) {
         });
 }
 
+/**
+ * 
+ * Provide the following:
+ * owner: String
+ * pet_name: String
+ * caretkaer: String
+ * start_period: String - Format: YYYY-MM-DD
+ * end_period: String - Format: YYYY-MM-DD
+ * payment_method: String
+ * delivary_method: String
+ * bid_rate: integer
+ * 
+ */
 function create_bid(req, res, next) {
     const owner = req.body.owner;
     const pet_name = req.body.pet_name;
@@ -127,6 +155,13 @@ function create_bid(req, res, next) {
     });
 }
 
+/**
+ * 
+ * Provide the following:
+ * user: owner or caretaker
+ * username: String
+ * 
+ */
 function get_user_bookings(req, res, next) {
     console.log(req.params);
 
@@ -145,6 +180,11 @@ function get_user_bookings(req, res, next) {
     });   
 }
 
+/** 
+ *
+ * Nothing to provide.
+ *  
+*/
 function get_bookings(req, res, next) {
     console.log(req.params);
 
@@ -159,6 +199,19 @@ function get_bookings(req, res, next) {
     });   
 }
 
+/**
+ * 
+ * Provide following in query string:
+ * owner: String
+ * pet_name: String
+ * caretkaer: String
+ * start_period: String - Format: YYYY-MM-DD
+ * end_period: same as above
+ * 
+ * Provide following for data:
+ * decision: Boolean - True for Accept / False for Decline
+ * 
+ */
 function reply_booking(req, res, next) {
     const { owner, pet_name, caretaker, start_period, end_period } = req.params;
     const decision = req.body.decision;
@@ -175,6 +228,20 @@ function reply_booking(req, res, next) {
     }); 
 }
 
+/**
+ * 
+ * Provide following in query string:
+ * owner: String
+ * pet_name: String
+ * caretkaer: String
+ * start_period: String - Format: YYYY-MM-DD
+ * end_period: same as above
+ * 
+ * Provide following for data:
+ * rating: integer - between 0 and 5
+ * review: String
+ * 
+ */
 function rate_booking(req, res, next) {
     const { owner, pet_name, caretaker, start_period, end_period } = req.params;
     const rating =  req.body["rating"] ? req.body.rating : null;
