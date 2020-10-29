@@ -34,12 +34,12 @@ module.exports.initRouter = function initRouter(app) {
 
 
     // UPDATE Methods
-    app.delete('/caretakers/:username/services', update_caretaker_price);
+    app.put('/caretakers/:username/services', update_caretaker_animals);
 
     // DELETE Methods
     app.delete('/caretakers/:username/leaves_availability', delete_leave_or_availability);
-    app.delete('/caretakers/:username/services', add_caretaker_animals);
-    app.delete('/caretakers/:username/services/:animal_name', add_caretaker_services);
+    app.delete('/caretakers/:username/services', delete_caretaker_animals);
+    app.delete('/caretakers/:username/services/:animal_name', delete_caretaker_services);
 }
 
 function query(req, fld) {
@@ -96,6 +96,183 @@ function login(req, res, next) {
         .catch(error => { 
             res.status(404).json({ message: "Encountered problem while authenticating." }).send(error);
             console.log(error);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ */
+function get_caretaker_animals(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+
+    pool.query(queries.get_single_caretakers_prices, [username])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched animals for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem fetching animals for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ * Provide the following in request body:
+ * animal_name: String, must be from list of pet types
+ * price: numeric
+ *
+ */
+function add_caretaker_animals(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.body.animal_name;
+    const price = req.body.price;
+
+    pool.query(queries.add_pet_type_caretaker, [username, animal_name, price])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully adding animal type for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem adding animal type for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ * Provide the following in request body:
+ * animal_name: String, must be from list of pet types
+ *
+ */
+function delete_caretaker_animals(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.body.animal_name;
+
+    pool.query(queries.delete_pet_type_caretaker, [username, animal_name])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully deleted animal type for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem deleting animal type for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ * Provide the following in request body:
+ * animal_name: String, must be from list of pet types
+ * price: numeric (modified field)
+ *
+ */
+function update_caretaker_animals(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.body.animal_name;
+    const price = req.body.price;
+
+    pool.query(queries.update_caretaker_price, [username, animal_name, price])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully updated price for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem updating price for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ * animal_name: String, from pet_types table
+ *
+ */
+function get_caretaker_services(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.params.animal_type;
+
+    pool.query(queries.get_caretaker_services, [animal_name, username])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched services for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem fetching services for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ * animal_name: String, from pet_types table
+ *
+ * Provide the following in request body:
+ * service: String, from services table
+ *
+ */
+function add_caretaker_services(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.params.animal_type;
+    const service = req.body.service;
+
+    pool.query(queries.add_service_caretaker, [username, animal_name, service])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully added service for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem adding service for caretaker.", error: err});
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ * animal_name: String, from pet_types table
+ *
+ * Provide the following in request body:
+ * service: String, from services table
+ *
+ */
+function delete_caretaker_services(req, res, next) {
+    console.log(req);
+    const username = req.params.username;
+    const animal_name = req.params.animal_type;
+    const service = req.body.service;
+
+    pool.query(queries.delete_service_caretaker, [username, animal_name, service])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully deleted service for caretaker!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem deleting service for caretaker.", error: err});
+            console.log(err);
         });
 }
 
