@@ -24,14 +24,11 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/login', login);
 
     // GET Methods
-    app.get('/route/:id/:name', function_name); // This is an example.
-    app.get('/get_available_caretakers', get_available_caretakers);  // Not sure of name, might be under bookings??
+    app.get('/get_available_caretakers/:start_period/:end_period/:owner/:pet_name', get_available_caretakers);
 
     // UPDATE Methods
-    app.put('/route', function_name); // This is an example.
 
     // DELETE Methods
-    app.delete('/route/:id/:name', function_name); // This is an example.
 
 }
 
@@ -94,7 +91,7 @@ function login(req, res, next) {
 
 /**
  *
- * Provide the following:
+ * Provide the following in path:
  * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
  * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
  * owner: String (owner username from pets table)
@@ -103,10 +100,10 @@ function login(req, res, next) {
  */
 function get_available_caretakers(req, res, next) {
     console.log(req);
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-    const owner = req.body.owner;
-    const pet_name = req.body.pet_name;
+    const start_period = req.params.start_period;
+    const end_period = req.params.end_period;
+    const owner = req.params.owner;
+    const pet_name = req.params.pet_name;
 
     pool.query(queries.search_caretaker, [start_period, end_period, owner, pet_name])
         .then(result => {
