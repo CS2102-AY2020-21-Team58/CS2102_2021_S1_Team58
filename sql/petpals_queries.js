@@ -172,6 +172,10 @@ sql.query = {
     get_all_accepted_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'ACCEPTED\'',
     //pet owner views all declined bookings of a particular pet
     get_all_declined_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'DECLINED\'',
+    //full time care taker views all leaves
+    get_all_full_timer_leaves: 'SELECT * FROM leave_dates WHERE username = $1',
+    //part taker views all availabilities
+    get_all_part_timer_availability: 'SELECT * FROM available_dates WHERE username = $1',
     //care taker views all bookings
     get_all_caretaker_bookings: 'SELECT * FROM bookings WHERE caretaker = $1',
     //care taker views all pending bookings
@@ -651,26 +655,26 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // matches bid price and services
 
     // variables: $1 start date, $2 end date, $3 owner username, $4 pet name
-    search_caretaker: 'SELECT U.username, U.first_name, H.price FROM users U, handles H WHERE $1 <= $2 \
+    search_caretaker: 'SELECT U.username, U.first_name, H.price FROM users U, handles H WHERE CAST($1 AS DATE) <= CAST($2 AS DATE) \
     AND ((EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) \
                     AND NOT EXISTS(SELECT 1 FROM leave_dates L WHERE L.username = U.username\
-                                AND (L.start_period BETWEEN $1 AND $2\
-                                    OR L.end_period BETWEEN $1 AND $2\
-                                    OR (L.start_period <= $1 AND L.end_period >= $1)\
+                                AND (L.start_period BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)\
+                                    OR L.end_period BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)\
+                                    OR (L.start_period <= CAST($1 AS DATE) AND L.end_period >= CAST($1 AS DATE))\
                                     )\
                     )\
                 )\
             OR (EXISTS(SELECT 1 FROM part_timers P WHERE P.username = U.username)\
                 AND EXISTS(SELECT 1 FROM available_dates A\
-                            WHERE A.start_period <= $1\
-                                AND A.end_period >= $2\
+                            WHERE A.start_period <= CAST($1 AS DATE)\
+                                AND A.end_period >= CAST($2 AS DATE)\
                                 AND A.username = U.username)\
                 )\
     )\
     AND NOT EXISTS (SELECT CURRENT_DATE + i \
-                    FROM generate_series(date $1 - CURRENT_DATE, date $2 - CURRENT_DATE) i\
+                    FROM generate_series(CAST($1 AS DATE) - CURRENT_DATE, CAST($2 AS DATE) - CURRENT_DATE) i\
                          WHERE (SELECT COUNT(*) FROM bookings B\
-                                WHERE B.status = ${STATUS_ACCEPTED}\
+                                WHERE B.status = \'ACCEPTED\'\
                                 AND B.caretaker = U.username\
                                 AND CURRENT_DATE + i BETWEEN B.start_period AND B.end_period) >=\
                                 (SELECT CASE\
