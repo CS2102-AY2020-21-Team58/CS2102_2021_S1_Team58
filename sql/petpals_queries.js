@@ -93,9 +93,9 @@ sql.query = {
     //Update location
     update_location: 'UPDATE users SET location = $2  WHERE username = $1',
     //Update rate caretaker
-    update_caretaker_price: 'UPDATE handles SET price = $2 WHERE caretaker = $1',
+    update_caretaker_price: 'UPDATE handles SET price = $2 WHERE caretaker = $1 AND animal_name = $2',
     //Update average rating
-    update_averate_rating: 'UPDATE caretakers SET average_rating = $2  WHERE username = $1',
+    update_average_rating: 'UPDATE caretakers SET average_rating = $2  WHERE username = $1',
 
     //DELETION
     //Delete user
