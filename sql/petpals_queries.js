@@ -651,7 +651,7 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // matches bid price and services
 
     // variables: $1 start date, $2 end date, $3 owner username, $4 pet name
-    search_caretaker: 'SELECT username, first_name FROM users U WHERE $1 <= $2 \
+    search_caretaker: 'SELECT U.username, U.first_name, H.price FROM users U, handles H WHERE $1 <= $2 \
     AND ((EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) \
                     AND NOT EXISTS(SELECT 1 FROM leave_dates L WHERE L.username = U.username\
                                 AND (L.start_period BETWEEN $1 AND $2\
@@ -681,8 +681,8 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
                                 )\
 \
     )\
-    AND EXISTS (SELECT 1 FROM handles H WHERE H.caretaker = U.username\
-                AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3))\
+    AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
+    AND H.caretaker = U.username\
 \
     AND NOT EXISTS (SELECT 1 FROM requires R\
                     WHERE R.pet_name = $4 AND R.owner = $3\
