@@ -25,6 +25,7 @@ module.exports.initRouter = function initRouter(app) {
 
     // GET Methods
     app.get('/route/:id/:name', function_name); // This is an example.
+    app.get('/get_available_caretakers', get_available_caretakers);  // Not sure of name, might be under bookings??
 
     // UPDATE Methods
     app.put('/route', function_name); // This is an example.
@@ -91,5 +92,29 @@ function login(req, res, next) {
         });
 }
 
+/**
+ *
+ * Provide the following:
+ * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
+ * owner: String (owner username from pets table)
+ * pet_name: String
+ *
+ */
+function get_available_caretakers(req, res, next) {
+    console.log(req);
+    const start_period = req.body.start_period;
+    const end_period = req.body.end_period;
+    const owner = req.body.owner;
+    const pet_name = req.body.pet_name;
 
-
+    pool.query(queries.search_caretaker, [start_period, end_period, owner, pet_name])
+        .then(result => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched available caretakers!");
+        })
+        .catch(err => {
+            res.status(404).json({message: "Encountered problem finding available caretakers.", error: err});
+            console.log(err);
+        });
+}
