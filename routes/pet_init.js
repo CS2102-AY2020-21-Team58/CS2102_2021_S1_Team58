@@ -22,15 +22,14 @@ module.exports.initRouter = function initRouter(app) {
     // POST Methods
     app.post('/register', register_user);
     app.post('/login', login);
-    app.post('/createbid', create_bid);
+    app.post('/booking', create_bid);
 
     // GET Methods
-    app.get('/getbookings', get_bookings);
-    app.get('/getbookings/:user/:username', get_user_bookings);
+    app.get('/booking', get_bookings);
+    app.get('/booking/:user/:username', get_user_bookings);
 
     // UPDATE Methods
-    app.put('/reply_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', reply_booking);
-    app.put('/rate_booking/:owner/:pet_name/:caretaker/:start_period/:end_period', rate_booking);
+    app.put('/booking/:owner/:pet_name/:caretaker/:start_period/:end_period', handlebooking);
 
     // DELETE Methods
 
@@ -88,7 +87,7 @@ function register_user(req, res, next) {
         .then(() => res.status(200).json({ message: "User added successfully." }))
         .catch(error => {
             console.log(error);
-            res.status(400).json({ message: error });
+            res.status(400).json({ error });
         });
 }
 
@@ -114,7 +113,7 @@ function login(req, res, next) {
             }
         })
         .catch(error => { 
-            res.status(404).json({ message: "Encountered problem while authenticating.", error: error });
+            res.status(404).json({ message: "Encountered problem while authenticating.", error });
             console.log(error);
         });
 }
@@ -149,7 +148,7 @@ function create_bid(req, res, next) {
             console.log("Successfully added booking!");
         })
         .catch(err => {
-            res.status(404).json({ message: "Encountered problem while creating bid.", error: err });
+            res.status(404).json({ message: "Encountered problem while creating bid.", err });
             console.log(err);
     });
 }
@@ -174,7 +173,7 @@ function get_user_bookings(req, res, next) {
             console.log("Successfully fetched booking!");
         })
         .catch(err => {
-            res.status(404).json({ message: "Encountered problem fetching bookings.", error: err });
+            res.status(404).json({ message: "Encountered problem fetching bookings.", err });
             console.log(err);
     });   
 }
@@ -193,7 +192,7 @@ function get_bookings(req, res, next) {
             console.log("Successfully fetched booking!");
         })
         .catch(err => {
-            res.status(404).json({ message: "Encountered problem fetching bookings.", error: err });
+            res.status(404).json({ message: "Encountered problem fetching bookings.", err });
             console.log(err);
     });   
 }
@@ -224,7 +223,7 @@ function reply_booking(req, res, next) {
         .catch(err => {
             res.status(404).json({ message: "Encountered problem updating booking.", error: err });
             console.log(err);
-    }); 
+    });
 }
 
 /**
@@ -253,7 +252,7 @@ function rate_booking(req, res, next) {
                 console.log("Successfully updated booking!");
             })
             .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                res.status(404).json({ message: "Encountered problem updating booking.", err });
                 console.log(err);
         });
         return; 
@@ -266,7 +265,7 @@ function rate_booking(req, res, next) {
                 console.log("Successfully updated booking!");
             })
             .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                res.status(404).json({ message: "Encountered problem updating booking.", err });
                 console.log(err);
         });
         return;
@@ -279,9 +278,38 @@ function rate_booking(req, res, next) {
                 console.log("Successfully updated booking!");
             })
             .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", error: err });
+                res.status(404).json({ message: "Encountered problem updating booking.", err });
                 console.log(err);
         });
         return;
+    }
+}
+
+/**
+ * 
+ * Provide following in query string:
+ * owner: String
+ * pet_name: String
+ * caretkaer: String
+ * start_period: String - Format: YYYY-MM-DD
+ * end_period: same as above
+ * 
+ * Provide following for data:
+ * rating: integer - between 0 and 5
+ * review: String
+ * 
+ * OR
+ * 
+ * Provide following for data:
+ * decision: Boolean - True for Accept / False for Decline
+ * 
+ */
+function handlebooking(req, res, next) {
+    if(req.body["rating"] || req.body["review"]) {
+        rate_booking(req, res, next);
+    } else if (req.body["decision"]) {
+        reply_booking(req, res, next);
+    } else {
+        res.status(404).json({ message: "Encountered problem updating booking." });
     }
 }
