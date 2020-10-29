@@ -209,7 +209,7 @@ function update_caretaker_animals(req, res, next) {
 function get_caretaker_services(req, res, next) {
     console.log(req);
     const username = req.params.username;
-    const animal_name = req.params.animal_type;
+    const animal_name = req.params.animal_name;
 
     pool.query(queries.get_caretaker_services, [animal_name, username])
         .then(result => {
@@ -235,7 +235,7 @@ function get_caretaker_services(req, res, next) {
 function add_caretaker_services(req, res, next) {
     console.log(req);
     const username = req.params.username;
-    const animal_name = req.params.animal_type;
+    const animal_name = req.params.animal_name;
     const service = req.body.service;
 
     pool.query(queries.add_service_caretaker, [username, animal_name, service])
@@ -262,7 +262,7 @@ function add_caretaker_services(req, res, next) {
 function delete_caretaker_services(req, res, next) {
     console.log(req);
     const username = req.params.username;
-    const animal_name = req.params.animal_type;
+    const animal_name = req.params.animal_name;
     const service = req.body.service;
 
     pool.query(queries.delete_service_caretaker, [username, animal_name, service])
