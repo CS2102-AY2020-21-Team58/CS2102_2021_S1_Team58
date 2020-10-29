@@ -650,7 +650,7 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // with less than 2/4/5 pets every day (for part-time/part-time rated 4/full time),
     // matches bid price and services
 
-    // variables: $1 start date, $2 end date, $3 owner username, $4 pet name, $5 max price
+    // variables: $1 start date, $2 end date, $3 owner username, $4 pet name
     search_caretaker: 'SELECT username, first_name FROM users U WHERE $1 <= $2 \
     AND ((EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) \
                     AND NOT EXISTS(SELECT 1 FROM leave_dates L WHERE L.username = U.username\
@@ -682,8 +682,7 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
 \
     )\
     AND EXISTS (SELECT 1 FROM handles H WHERE H.caretaker = U.username\
-                AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
-                AND H.price <= $5)\
+                AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3))\
 \
     AND NOT EXISTS (SELECT 1 FROM requires R\
                     WHERE R.pet_name = $4 AND R.owner = $3\
