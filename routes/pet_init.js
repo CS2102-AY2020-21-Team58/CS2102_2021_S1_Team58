@@ -22,22 +22,16 @@ module.exports.initRouter = function initRouter(app) {
     // POST Methods
     app.post('/register', register_user);
     app.post('/login', login);
-    app.post('/caretakers/part_timers/:username/availability', add_availability);
-    app.post('/caretakers/full_timers/:username/leaves', add_leave);
     app.post('/caretakers/:username/leaves_availability', add_leave_or_availability);
 
     // GET Methods
     app.get('/caretakers/search/:start_period/:end_period/:owner/:pet_name', get_available_caretakers);
-    app.get('/caretakers/part_timers/:username/availability', get_availability);
-    app.get('/caretakers/full_timers/:username/leaves', get_leaves);
     app.get('/caretakers/:username/leaves_availability', get_leave_or_availability);
 
 
     // UPDATE Methods
 
     // DELETE Methods
-    app.delete('/caretakers/part_timers/:username/availability', delete_availability);
-    app.delete('/caretakers/full_timers/:username/leaves', delete_leave);
     app.delete('/caretakers/:username/leaves_availability', delete_leave_or_availability);
 }
 
@@ -121,175 +115,6 @@ function get_available_caretakers(req, res, next) {
         })
         .catch(err => {
             res.status(404).json({message: "Encountered problem finding available caretakers.", error: err});
-            console.log(err);
-        });
-}
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- */
-function get_leaves(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-
-    pool.query(queries.get_all_full_timer_leaves, [username])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully fetched leaves!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem finding leaves.",
-                error: err
-            });
-            console.log(err);
-        });
-}
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- * Provide the following in request body:
- * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- *
- */
-function add_leave(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-
-    pool.query(queries.add_leave, [username, start_period, end_period])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully added leave!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem adding leave.",
-                error: err
-            });
-            console.log(err);
-        });
-}
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- * Provide the following in request body:
- * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- *
- */
-function delete_leave(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-
-    pool.query(queries.delete_leave, [username, start_period, end_period])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully deleted leave!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem deleting leave.",
-                error: err
-            });
-            console.log(err);
-        });
-}
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- */
-function get_availability(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-
-    pool.query(queries.get_all_part_timer_availability, [username])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully fetched availability!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem finding availability.",
-                error: err
-            });
-            console.log(err);
-        });
-}
-
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- * Provide the following in request body:
- * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- *
- */
-function add_availability(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-
-    pool.query(queries.add_availability, [username, start_period, end_period])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully added availability!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem adding availability.",
-                error: err
-            });
-            console.log(err);
-        });
-}
-
-/**
- *
- * Provide the following in path:
- * username: String
- *
- * Provide the following in request body:
- * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
- *
- */
-function delete_availability(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-
-    pool.query(queries.delete_availability, [username, start_period, end_period])
-        .then(result => {
-            res.status(200).json({results: result.rows});
-            console.log("Successfully deleted availability!");
-        })
-        .catch(err => {
-            res.status(404).json({
-                message: "Encountered problem deleting availability.",
-                error: err
-            });
             console.log(err);
         });
 }
