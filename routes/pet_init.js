@@ -37,7 +37,7 @@ module.exports.initRouter = function initRouter(app) {
 
     // DELETE Methods
     app.delete('/caretakers/part_timers/:username/availability', delete_availability);
-    app.delete('/caretakers/full_timers/:username/leaves', delete_leaves);
+    app.delete('/caretakers/full_timers/:username/leaves', delete_leave);
     app.delete('/caretakers/:username/leaves_availability/', delete_leave_or_availability);
 }
 
