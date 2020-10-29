@@ -7,9 +7,9 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'me',
-    password: 'password',
+    password: 'my_password',
     host: 'localhost',
-    database: 'petpals_real',
+    database: 'petpals',
     port: 5432
 });
 
@@ -129,7 +129,7 @@ function get_revenue(req, res, next) {
     const date = "\'" + req.params.date + "\'";
     let query = queries.get_monthly_revenue;
     pool.query(query, [date]).then(result => {
-        res.status(200).json(result.rows[0]);
+        res.status(200).json({results: result.rows[0]});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching total revenue.", error: err});
         console.log(err);
@@ -141,7 +141,7 @@ function get_profit(req, res, next) {
     const date = "\'" + req.params.date + "\'";
     let query = queries.get_monthly_profit;
     pool.query(query, [date]).then(result => {
-        res.status(200).json(result.rows[0]);
+        res.status(200).json({results: result.rows[0]});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching profit.", error: err});
         console.log(err);
@@ -159,7 +159,7 @@ function get_user_salary(req, res, next) {
         query = queries.get_fulltimer_salaries;
     }
     pool.query(query, [date, username]).then(result => {
-        res.status(200).json(result.rows[0]);
+        res.status(200).json({results: result.rows[0]});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching salary.", error: err});
         console.log(err);
@@ -171,7 +171,7 @@ function get_bad_caretakers(req, res, next) {
     const date = "\'" + req.params.date + "\'";
     let query = queries.caretakers_with_below_60;
     pool.query(query, [date]).then(result => {
-        res.status(200).json(result.rows);
+        res.status(200).json({results: result.rows});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching poor caretakers.", error: err});
         console.log(err);
@@ -183,7 +183,7 @@ function get_top_ratings(req, res, next) {
     const username = req.params.username;
     let query = queries.get_top_five_ratings;
     pool.query(query, [username]).then(result => {
-        res.status(200).json(result.rows);
+        res.status(200).json({results: result.rows});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching poor caretakers.", error: err});
         console.log(err);
@@ -195,7 +195,7 @@ function get_worst_ratings(req, res, next) {
     const username = req.params.username;
     let query = queries.get_bottom_five_ratings;
     pool.query(query, [username]).then(result => {
-        res.status(200).json(result.rows);
+        res.status(200).json({results: result.rows});
     }).catch(err => {
         res.status(404).json({message: "Encountered problem fetching poor caretakers.", error: err});
         console.log(err);
