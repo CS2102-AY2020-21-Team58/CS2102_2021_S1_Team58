@@ -335,9 +335,9 @@ function add_all_roles(roles, username) {
 function add_role(role, username) {
     if(role.toLowerCase()=="administrator") {
         pool.query(queries.add_admin, [username]);
-    } else if (role.toLowerCase()=="full_timer") { 
+    } else if (role.toLowerCase()=="full-timer") { 
         pool.query(queries.add_full_timer, [username]);
-    } else if (role.toLowerCase()=="part_timer") {
+    } else if (role.toLowerCase()=="part-timer") {
         pool.query(queries.add_part_timer, [username]);
     } else if (role.toLowerCase()=="owner") {
         pool.query(queries.add_pet_owner, [username]);
