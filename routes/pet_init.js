@@ -74,16 +74,15 @@ function register_user(req, res, next) {
     let types = req.body.types;
     types = types.map(t => t.toLowerCase());
 
-    if(types.includes("full-timer") || types.includes("part-timer")) {
+    if(types.includes("full-timer") && types.includes("part-timer")) {
         res.status(400).json({ message: "Failed! Cannot be Part-timer and Full-timer at same time!" });
         return;
     }
 
-    const containsCaretaker = types.includes("full_timer") || types.includes("part_timer");
+    const containsCaretaker = types.includes("full-timer") || types.includes("part-timer");
 
     pool.query(queries.add_user, [username, password, full_name, location, cardNumber])
         .catch(err => {
-            console.log("Username already in use!");
             throw "Username already in use!";
         })
         .then(()=> {
@@ -95,14 +94,22 @@ function register_user(req, res, next) {
         .then(() => res.status(200).json({ message: "Successfully registered user!" }))
         .catch(error => {
             console.log(error);
-            cancel_registration(username);
-            res.status(400).json({ error });
+            if(error=="Username already in use!") {
+                res.status(400).json({ message: error });
+            } else {
+                cancel_registration(username);
+                res.status(400).json({ message: error });
+            }
         });
 }
 
 function add_all_roles(roles, username) {
     for(const r of roles) {
-        add_role(r, username);
+        try {
+            add_role(r, username);
+        } catch (error) {
+            throw error;
+        }
     }
 }
 
@@ -128,6 +135,7 @@ function cancel_registration(username) {
         .then(()=> pool.query(queries.delete_owner, [username]))
         .then(()=> pool.query(queries.delete_user, [username]))
         .catch(error => {
+            console.log(error);
             throw "Error encountered while registering user!";
         });
 }
