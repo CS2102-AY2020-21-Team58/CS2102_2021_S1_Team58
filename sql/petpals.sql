@@ -19,12 +19,38 @@ CREATE TABLE owners (
     username varchar(64) references users(username) PRIMARY KEY
 );
 
+CREATE OR REPLACE FUNCTION is_full_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM full_timers FT
+WHERE $1 = FT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION is_part_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM part_timers PT
+WHERE $1 = PT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE part_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
+    CHECK(is_full_timer(username)=0)
 );
 
 CREATE TABLE full_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
+    CHECK(is_part_timer(username)=0)
 );
 
 CREATE TABLE available_dates (
@@ -169,39 +195,6 @@ CREATE TRIGGER direct_accept
     AFTER INSERT ON bookings
     FOR EACH ROW
     EXECUTE PROCEDURE update_fulltimer_booking();
-
-
-CREATE OR REPLACE FUNCTION not_full_timer() RETURNS TRIGGER AS $trig$
-DECLARE ctx NUMERIC;
-BEGIN
-SELECT COUNT(*) INTO ctx FROM full_timers FT
-WHERE NEW.username = FT.username;
-IF ctx > 0 THEN
-RETURN NULL;
-ELSE
-RETURN NEW;
-END IF; END; 
-$trig$ LANGUAGE plpgsql;
-
-CREATE TRIGGER check_part_timer
-BEFORE INSERT OR UPDATE ON part_timers
-FOR EACH ROW EXECUTE PROCEDURE not_full_timer();
-
-CREATE OR REPLACE FUNCTION not_part_timer() RETURNS TRIGGER AS $trig$
-DECLARE ctx NUMERIC;
-BEGIN
-SELECT COUNT(*) INTO ctx FROM part_timers PT
-WHERE NEW.username = PT.username;
-IF ctx > 0 THEN
-RETURN NULL;
-ELSE
-RETURN NEW;
-END IF; END; 
-$trig$ LANGUAGE plpgsql;
-
-CREATE TRIGGER check_full_timer
-BEFORE INSERT OR UPDATE ON full_timers
-FOR EACH ROW EXECUTE PROCEDURE not_part_timer();
 
 CREATE OR REPLACE FUNCTION update_avg_rating() RETURNS trigger AS $ret$
  	DECLARE ctx NUMERIC;

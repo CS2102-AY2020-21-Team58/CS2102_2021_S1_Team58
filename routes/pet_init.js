@@ -82,7 +82,10 @@ function register_user(req, res, next) {
     let types = req.body.types;
     types = types.map(t => t.toLowerCase());
 
-    console.log(types);
+    if(types.includes("full_timer") || types.includes("part_timer")) {
+        res.status(400).json({ message: "Failed! Cannot be Part-timer and Full-timer at same time!" });
+        return;
+    }
 
     const containsCaretaker = types.includes("full_timer") || types.includes("part_timer");
 
