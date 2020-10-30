@@ -326,6 +326,38 @@ function cancel_registration(username) {
         });
 }
 
+function add_all_roles(roles, username) {
+    for(const r of roles) {
+        add_role(r, username);
+    }
+}
+
+function add_role(role, username) {
+    if(role.toLowerCase()=="administrator") {
+        pool.query(queries.add_admin, [username]);
+    } else if (role.toLowerCase()=="full_timer") { 
+        pool.query(queries.add_full_timer, [username]);
+    } else if (role.toLowerCase()=="part_timer") {
+        pool.query(queries.add_part_timer, [username]);
+    } else if (role.toLowerCase()=="owner") {
+        pool.query(queries.add_pet_owner, [username]);
+    } else {
+        throw "Incorrect user type! Registration aborted.";
+    }
+}
+
+function cancel_registration(username) {
+    pool.query(queries.delete_admin, [username])
+        .then(()=> pool.query(queries.delete_full_timer, [username]))
+        .then(()=> pool.query(queries.delete_part_timer, [username]))
+        .then(()=> pool.query(queries.delete_caretaker, [username]))
+        .then(()=> pool.query(queries.delete_owner, [username]))
+        .then(()=> pool.query(queries.delete_user, [username]))
+        .catch(error => {
+            throw "Error encountered while registering user!";
+        });
+}
+
 /**
  * 
  * Provide the following:
