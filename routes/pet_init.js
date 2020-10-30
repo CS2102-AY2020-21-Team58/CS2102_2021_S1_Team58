@@ -14,7 +14,7 @@ const pool = new Pool({
 });
 
 module.exports.initRouter = function initRouter(app) {
-    // Basic entry point test.
+    // Basic entry point for test.
     app.get('/', (request, response) => {
         response.json({ info: 'Pet Pals backend started.' })
     });
