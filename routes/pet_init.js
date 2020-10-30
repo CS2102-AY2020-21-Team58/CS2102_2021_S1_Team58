@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'postgres',
-    password: 'mustafa786',
+    password: 'password',
     host: 'localhost',
     database: 'petpals',
     port: 5432
