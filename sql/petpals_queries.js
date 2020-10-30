@@ -94,9 +94,9 @@ sql.query = {
     //Update location
     update_location: 'UPDATE users SET location = $2  WHERE username = $1',
     //Update rate caretaker
-    update_caretaker_price: 'UPDATE handles SET price = $2 WHERE caretaker = $1',
+    update_caretaker_price: 'UPDATE handles SET price = $3 WHERE caretaker = $1 AND animal_name = $2',
     //Update average rating
-    update_averate_rating: 'UPDATE caretakers SET average_rating = $2  WHERE username = $1',
+    update_average_rating: 'UPDATE caretakers SET average_rating = $2  WHERE username = $1',
 
     //DELETION
     //Delete user
@@ -151,6 +151,8 @@ sql.query = {
     get_caretaker_services: 'SELECT * FROM provides WHERE animal_name = $1 AND caretaker = $2',
     //get all care takers that can handle a pet type with prices and average review
     get_caretakers_prices: 'SELECT * FROM caretakers NATURAL JOIN handles WHERE animal_name = $1',
+    //get pet types with prices that a caretaker can handle
+    get_single_caretakers_prices: 'SELECT animal_name, price FROM handles WHERE caretaker = $1',
     //Get all caretakers in the same area as a given pet owner
     get_caretakers_in_area: 'SELECT U2.username FROM users U1, users U2, caretakers C WHERE U1.username = $1 AND C.username = U2.username AND U2.area = U1.area',
     //get pets of a pet owner
@@ -174,6 +176,10 @@ sql.query = {
     get_all_accepted_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'ACCEPTED\'',
     //pet owner views all declined bookings of a particular pet
     get_all_declined_pet_bookings: 'SELECT * FROM bookings WHERE owner = $1 AND pet_name = $2 AND status = \'DECLINED\'',
+    //full time care taker views all leaves
+    get_all_full_timer_leaves: 'SELECT * FROM leave_dates WHERE username = $1',
+    //part taker views all availabilities
+    get_all_part_timer_availability: 'SELECT * FROM available_dates WHERE username = $1',
     //care taker views all bookings
     get_all_caretaker_bookings: 'SELECT * FROM bookings WHERE caretaker = $1',
     //care taker views all pending bookings
@@ -195,84 +201,84 @@ sql.query = {
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
     get_parttimer_salaries: 'SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
-        END) \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
+        END) AS salary \
         FROM bookings \
-        WHERE caretaker = $1 AND status = \'ACCEPTED\'',
+        WHERE caretaker = $2 AND status = \'ACCEPTED\'',
 
     //get salary in the given month for a particular full timer.
     get_fulltimer_salaries: 'SELECT 3000 + 0.8 * (SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) * bid_rate \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) * bid_rate \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
-        END) \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+        END) AS salary \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\')/(SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') * ((SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
-        END) \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
+        END) AS salary \
 FROM bookings \
-WHERE caretaker = C.username AND status = \'ACCEPTED\') - 60) \
+WHERE caretaker = C.username AND status = \'ACCEPTED\') - 60) AS salary \
 FROM caretakers C \
-WHERE C.username = $1 AND ( \
+WHERE C.username = $2 AND ( \
 SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') > 60 \
 UNION \
-SELECT 3000 \
+SELECT 3000 AS salary \
 FROM caretakers C \
-WHERE C.username = $1 AND (SELECT SUM( \
+WHERE C.username = $2 AND (SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
         FROM bookings \
         WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60',
@@ -280,14 +286,14 @@ WHERE C.username = $1 AND (SELECT SUM( \
         //get list of caretaker username and salary to be paid to them
         get_salary_list: 'SELECT C.username AS cusername, COALESCE((SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate * 0.75 \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) * bid_rate * 0.75 \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) * bid_rate * 0.75 \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
             END) \
             FROM bookings \
             WHERE caretaker = C.username AND status = \'ACCEPTED\'), 0) AS salary \
@@ -296,38 +302,38 @@ WHERE C.username = $1 AND (SELECT SUM( \
    UNION \
    SELECT C.username AS cusername, 3000 + 0.8 * (SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) * bid_rate \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) * bid_rate \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
             END) \
    FROM bookings \
    WHERE caretaker = C.username AND status = \'ACCEPTED\')/(SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
             END) \
    FROM bookings \
    WHERE caretaker = C.username AND status = \'ACCEPTED\') * ((SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
             END) \
    FROM bookings \
    WHERE caretaker = C.username AND status = \'ACCEPTED\') - 60) AS salary \
@@ -335,14 +341,14 @@ WHERE C.username = $1 AND (SELECT SUM( \
    WHERE C.username IN (SELECT username FROM full_timers) AND ( \
    SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
             END) \
    FROM bookings \
    WHERE caretaker = C.username AND status = \'ACCEPTED\') > 60 \
@@ -351,43 +357,43 @@ WHERE C.username = $1 AND (SELECT SUM( \
    FROM full_timers C \
    WHERE C.username IN (SELECT username FROM full_timers) AND (SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
     END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
             OR (SELECT SUM( \
                 CASE \
-                    WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                    WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                         DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-                    WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                    WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                         DATE_PART(\'day\', end_period::date) \
-                    WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                    WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                         (end_period::date - start_period::date + 1) \
-                    WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                        DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+                    WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                        DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
                 END) \
             FROM bookings \
             WHERE caretaker = C.username AND status = \'ACCEPTED\') IS NULL',
 
     //total salary to be given in a particular month
-    total_monthly_salary: 'SELECT SUM(salary) \
+    total_monthly_salary: 'SELECT SUM(salary) AS total_salary \
     FROM (SELECT C.username AS cusername, COALESCE((SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) * bid_rate * 0.75 \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
         END) \
         FROM bookings \
         WHERE caretaker = C.username AND status = \'ACCEPTED\'), 0) AS salary \
@@ -396,38 +402,38 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     UNION \
     SELECT C.username AS cusername, 3000 + 0.8 * (SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) * bid_rate \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) * bid_rate \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\')/(SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') * ((SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') - 60) AS salary \
@@ -435,14 +441,14 @@ FROM full_timers C \
 WHERE C.username IN (SELECT username FROM full_timers) AND ( \
 SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') > 60 \
@@ -451,68 +457,68 @@ SELECT C.username AS cusername, 3000 AS salary \
 FROM full_timers C \
 WHERE C.username IN (SELECT username FROM full_timers) AND (SELECT SUM( \
 CASE \
-    WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+    WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
         DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-    WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+    WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
         DATE_PART(\'day\', end_period::date) \
-    WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+    WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
         (end_period::date - start_period::date + 1) \
-    WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-        DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+    WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+        DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
 END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
         OR (SELECT SUM( \
             CASE \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-                WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+                WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                     DATE_PART(\'day\', end_period::date) \
-                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+                WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                     (end_period::date - start_period::date + 1) \
-                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+                WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
             END) \
         FROM bookings \
         WHERE caretaker = C.username AND status = \'ACCEPTED\') IS NULL) AS salaries',
 
     //display total revenue
     get_monthly_revenue: 'SELECT SUM( CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
-    END) \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+    END) AS revenue \
 FROM bookings \
 WHERE status = \'ACCEPTED\'',
 
     //get profit for a particular month
     get_monthly_profit: 'SELECT (SELECT SUM( CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
     END) \
 FROM bookings \
-WHERE status = \'ACCEPTED\') - SUM(salary) \
+WHERE status = \'ACCEPTED\') - SUM(salary) AS profit \
 FROM (SELECT C.username AS cusername, COALESCE((SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate * 0.75 \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) * bid_rate * 0.75 \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) * bid_rate * 0.75 \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate * 0.75 \
     END) \
     FROM bookings \
     WHERE caretaker = C.username AND status = \'ACCEPTED\'), 0) AS salary \
@@ -521,38 +527,38 @@ WHERE C.username IN (SELECT username FROM part_timers) \
 UNION \
 SELECT C.username AS cusername, 3000 + 0.8 * (SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) * bid_rate \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') * bid_rate \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') * bid_rate \
     END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\')/(SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
     END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') * ((SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
     END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') - 60) AS salary \
@@ -560,14 +566,14 @@ FROM full_timers C \
 WHERE C.username IN (SELECT username FROM full_timers) AND ( \
 SELECT SUM( \
     CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-        WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
             DATE_PART(\'day\', end_period::date) \
-        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+        WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
             (end_period::date - start_period::date + 1) \
-        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-            DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+        WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+            DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
     END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') > 60 \
@@ -576,27 +582,27 @@ SELECT C.username AS cusername, 3000 AS salary \
 FROM full_timers C \
 WHERE C.username IN (SELECT username FROM full_timers) AND (SELECT SUM( \
 CASE \
-WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
     DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
     DATE_PART(\'day\', end_period::date) \
-WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
     (end_period::date - start_period::date + 1) \
-WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-    DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+    DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
 END) \
 FROM bookings \
 WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     OR (SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period::date) + interval \'1 month\') - start_period::date) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period::date)) THEN \
+            WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period::date) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period::date) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period::date)) THEN \
                 DATE_PART(\'day\', end_period::date) \
-            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
+            WHEN DATE_PART(\'month\', start_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) = DATE_PART(\'year\', end_period::date) THEN \
                 (end_period::date - start_period::date + 1) \
-            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period::date) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period::date) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period::date) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period::date) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
     FROM bookings \
     WHERE caretaker = C.username AND status = \'ACCEPTED\') IS NULL) AS salaries',
@@ -606,17 +612,17 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     FROM (users u NATURAL JOIN full_timers f) LEFT JOIN \
     (SELECT caretaker, SUM( \
       CASE \
-        WHEN DATE_PART(\'month\', TIMESTAMP $1) = DATE_PART(\'month\', start_period) AND (DATE_PART(\'month\', TIMESTAMP $1) < DATE_PART(\'month\', end_period) OR DATE_PART(\'year\', TIMESTAMP $1) < DATE_PART(\'year\', end_period)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', start_period) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'month\', end_period) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) < DATE_PART(\'year\', end_period)) THEN \
           DATE_PART(\'day\', (date_trunc(\'month\', start_period) + interval \'1 month\') - start_period) \
-        WHEN DATE_PART(\'month\', TIMESTAMP $1) = DATE_PART(\'month\', end_period) AND (DATE_PART(\'month\', TIMESTAMP $1) > DATE_PART(\'month\', start_period) OR DATE_PART(\'year\', TIMESTAMP $1) > DATE_PART(\'year\', end_period)) THEN \
+        WHEN DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) = DATE_PART(\'month\', end_period) AND (DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'month\', start_period) OR DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) > DATE_PART(\'year\', end_period)) THEN \
           DATE_PART(\'day\', end_period) \
-        WHEN DATE_PART(\'month\', start_period) = DATE_PART(\'month\', TIMESTAMP $1) AND DATE_PART(\'month\', end_period) = DATE_PART(\'month\', TIMESTAMP $1) AND DATE_PART(\'year\', start_period) = DATE_PART(\'year\', end_period) THEN \
+        WHEN DATE_PART(\'month\', start_period) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period) = DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period) = DATE_PART(\'year\', end_period) THEN \
           (end_period - start_period + 1) \
-        WHEN DATE_PART(\'month\', start_period) < DATE_PART(\'month\', TIMESTAMP $1) AND DATE_PART(\'month\', end_period) > DATE_PART(\'month\', TIMESTAMP $1) AND DATE_PART(\'year\', start_period) <= DATE_PART(\'year\', TIMESTAMP $1) AND DATE_PART(\'year\', end_period) >= DATE_PART(\'year\', TIMESTAMP $1) THEN \
-          DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $1) + interval \'1 month\' - interval \'1 day\') \
+        WHEN DATE_PART(\'month\', start_period) < DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period) > DATE_PART(\'month\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period) <= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period) >= DATE_PART(\'year\', CAST( $1 AS TIMESTAMP )) THEN \
+          DATE_PART(\'day\', date_trunc(\'month\', CAST( $1 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
       END) \
     FROM bookings \
-    WHERE status=${STATUS_ACCEPTED}\
+    WHERE status=\'${STATUS_ACCEPTED}\' \
     GROUP BY caretaker) as b ON b.caretaker=f.username \
     WHERE b.sum < 60 OR b.sum IS NULL`,
 
@@ -652,27 +658,27 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // with less than 2/4/5 pets every day (for part-time/part-time rated 4/full time),
     // matches bid price and services
 
-    // variables: $1 start date, $2 end date, $3 owner username, $4 pet name, $5 max price
-    search_caretaker: 'SELECT username, first_name FROM users U WHERE $1 <= $2 \
+    // variables: $1 start date, $2 end date, $3 owner username, $4 pet name
+    search_caretaker: 'SELECT U.username, U.first_name, H.price FROM users U, handles H WHERE CAST($1 AS DATE) <= CAST($2 AS DATE) \
     AND ((EXISTS(SELECT 1 FROM full_timers F WHERE F.username = U.username) \
                     AND NOT EXISTS(SELECT 1 FROM leave_dates L WHERE L.username = U.username\
-                                AND (L.start_period BETWEEN $1 AND $2\
-                                    OR L.end_period BETWEEN $1 AND $2\
-                                    OR (L.start_period <= $1 AND L.end_period >= $1)\
+                                AND (L.start_period BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)\
+                                    OR L.end_period BETWEEN CAST($1 AS DATE) AND CAST($2 AS DATE)\
+                                    OR (L.start_period <= CAST($1 AS DATE) AND L.end_period >= CAST($1 AS DATE))\
                                     )\
                     )\
                 )\
             OR (EXISTS(SELECT 1 FROM part_timers P WHERE P.username = U.username)\
                 AND EXISTS(SELECT 1 FROM available_dates A\
-                            WHERE A.start_period <= $1\
-                                AND A.end_period >= $2\
+                            WHERE A.start_period <= CAST($1 AS DATE)\
+                                AND A.end_period >= CAST($2 AS DATE)\
                                 AND A.username = U.username)\
                 )\
     )\
     AND NOT EXISTS (SELECT CURRENT_DATE + i \
-                    FROM generate_series(date $1 - CURRENT_DATE, date $2 - CURRENT_DATE) i\
+                    FROM generate_series(CAST($1 AS DATE) - CURRENT_DATE, CAST($2 AS DATE) - CURRENT_DATE) i\
                          WHERE (SELECT COUNT(*) FROM bookings B\
-                                WHERE B.status = \'accepted\'\
+                                WHERE B.status = \'ACCEPTED\'\
                                 AND B.caretaker = U.username\
                                 AND CURRENT_DATE + i BETWEEN B.start_period AND B.end_period) >=\
                                 (SELECT CASE\
@@ -683,9 +689,8 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
                                 )\
 \
     )\
-    AND EXISTS (SELECT 1 FROM handles H WHERE H.caretaker = U.username\
-                AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
-                AND H.price <= $5)\
+    AND H.animal_name = (SELECT type FROM pets WHERE pet_name = $4 AND owner = $3)\
+    AND H.caretaker = U.username\
 \
     AND NOT EXISTS (SELECT 1 FROM requires R\
                     WHERE R.pet_name = $4 AND R.owner = $3\
