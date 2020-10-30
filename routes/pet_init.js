@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'postgres',
-    password: 'password',
+    password: 'mustafa786',
     host: 'localhost',
     database: 'petpals',
     port: 5432
@@ -24,13 +24,12 @@ module.exports.initRouter = function initRouter(app) {
     app.post('/login', login);
 
     // // GET Methods
-    app.get('/getpetsofowner/:username', get_pets_of_owner);
-    app.get('/getallservices/', get_all_services);
-    app.get('/getallservices/', get_pending_bids);
-    app.get('/getallservices/', get_pending_bids);
-    app.get('/getmonthmaxjobs/', get_month_of_max_jobs);
-    app.get('/getjobsinmaxjobsmonth/', get_jobs_max_job_month);
-    app.get('/getcaretakersamearea/:location', get_caretaker_same_area);
+    app.get('/petsofowner/:username', get_pets_of_owner);
+    app.get('/allservices/', get_all_services);
+    app.get('/pendingbids/', get_pending_bids);
+    app.get('/monthmaxjobs/', get_month_of_max_jobs);
+    app.get('/jobsinmaxjobsmonth/', get_jobs_max_job_month);
+    app.get('/sameareacaretaker/:location', get_same_area_caretaker);
 
     // // UPDATE Methods
     // app.put('/route', function_name); // This is an example.
@@ -129,25 +128,6 @@ function get_month_of_max_jobs(req, res, next) {
  * Provide nothing;
  * 
  */
-function get_month_of_max_jobs(req, res, next) {
-    console.log(req.params);
-    pool.query(queries.get_month_where_max_pets_taken_care)
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully got month with max jobs");
-    })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems getting month with max jobs", error: err }).send(error);
-        console.log(err);
-    });
-}
-
-/**
- * 
- * Provide nothing;
- * 
- */
 function get_jobs_max_job_month(req, res, next) {
     console.log(req.params);
     pool.query(queries.get_jobs_number_during_month_with_max_jobs)
@@ -165,10 +145,10 @@ function get_jobs_max_job_month(req, res, next) {
 /**
  * 
  * Provide following in path:
- * area: String
+ * location area: String
  * 
  */
-function get_caretaker_same_area(req, res, next) {
+function get_same_area_caretaker(req, res, next) {
     console.log(req.params);
     const location = req.params.location;
     pool.query(queries.get_caretakers_same_area, [location])
