@@ -240,7 +240,7 @@ function get_same_area_caretaker(req, res, next) {
 
 
 /**
- * 
+ *
  * Provide following:
  * username: String
  * passowrd: String
@@ -248,7 +248,7 @@ function get_same_area_caretaker(req, res, next) {
  * location: String
  * card: integer of 16 digits
  * type: Administrator OR Full_Timer OR Part_Timer OR Owner
- * 
+ *
  */
 function register_user(req, res, next) {
     console.log(req.body);
@@ -326,64 +326,102 @@ function cancel_registration(username) {
         });
 }
 
-function add_all_roles(roles, username) {
-    for(const r of roles) {
-        add_role(r, username);
-    }
+  const containsCaretaker =
+    types.includes("full-timer") || types.includes("part-timer");
+
+  pool
+    .query(queries.add_user, [
+      username,
+      password,
+      full_name,
+      location,
+      cardNumber,
+    ])
+    .catch((err) => {
+      console.log("Username already in use!");
+      throw "Username already in use!";
+    })
+    .then(() => {
+      if (containsCaretaker) {
+        pool.query(queries.add_care_taker, [username]);
+      }
+    })
+    .then(() => types.map((type) => add_role(type, username)))
+    .then(() =>
+      res.status(200).json({ message: "Successfully registered user!" })
+    )
+    .catch((error) => {
+      console.log(error);
+      if (error == "Username already in use!") {
+        res.status(400).json({ message: error });
+      } else {
+        cancel_registration(username);
+        res.status(400).json({ message: error });
+      }
+    });
 }
 
 function add_role(role, username) {
-    if(role.toLowerCase()=="administrator") {
-        pool.query(queries.add_admin, [username]);
-    } else if (role.toLowerCase()=="full-timer") { 
-        pool.query(queries.add_full_timer, [username]);
-    } else if (role.toLowerCase()=="part-timer") {
-        pool.query(queries.add_part_timer, [username]);
-    } else if (role.toLowerCase()=="owner") {
-        pool.query(queries.add_pet_owner, [username]);
-    } else {
-        throw "Incorrect user type! Registration aborted.";
-    }
+  if (role.toLowerCase() == "administrator") {
+    pool.query(queries.add_admin, [username]);
+  } else if (role.toLowerCase() == "full-timer") {
+    pool.query(queries.add_full_timer, [username]);
+  } else if (role.toLowerCase() == "part-timer") {
+    pool.query(queries.add_part_timer, [username]);
+  } else if (role.toLowerCase() == "owner") {
+    pool.query(queries.add_pet_owner, [username]);
+  } else {
+    throw "Incorrect user type! Registration aborted.";
+  }
 }
 
 function cancel_registration(username) {
-    pool.query(queries.delete_admin, [username])
-        .then(()=> pool.query(queries.delete_full_timer, [username]))
-        .then(()=> pool.query(queries.delete_part_timer, [username]))
-        .then(()=> pool.query(queries.delete_caretaker, [username]))
-        .then(()=> pool.query(queries.delete_owner, [username]))
-        .then(()=> pool.query(queries.delete_user, [username]))
-        .catch(error => {
-            throw "Error encountered while registering user!";
-        });
+  pool
+    .query(queries.delete_admin, [username])
+    .then(() => pool.query(queries.delete_full_timer, [username]))
+    .then(() => pool.query(queries.delete_part_timer, [username]))
+    .then(() => pool.query(queries.delete_caretaker, [username]))
+    .then(() => pool.query(queries.delete_owner, [username]))
+    .then(() => pool.query(queries.delete_user, [username]))
+    .catch((error) => {
+      throw "Error encountered while registering user!";
+    });
 }
 
 /**
- * 
+ *
  * Provide the following:
  * username: String
  * password: String
- * 
+ *
  */
 function login(req, res, next) {
-    const username = req.body.username;
-    const password = req.body.password;
+  const username = req.body.username;
+  const password = req.body.password;
 
-    pool.query(queries.check_login_details, [username, password])
-        .then(result => {
-            if(!result.rows || result.rowCount==0) {
-                res.status(404).json({ message: "Failed to login user: incorrect credentials" });
-                console.log("Log in failed!");
-            } else {
-                get_roles(username)
-                    .then(roles => res.status(200).json({ message: "Successfully logged in!", username, roles }));
-                console.log("Logged in!");
-            }
-        })
-        .catch(error => { 
-            res.status(404).json({ message: "Encountered problem while authenticating.", error });
-            console.log(error);
-        });
+  pool
+    .query(queries.check_login_details, [username, password])
+    .then((result) => {
+      if (!result.rows || result.rowCount == 0) {
+        res
+          .status(404)
+          .json({ message: "Failed to login user: incorrect credentials" });
+        console.log("Log in failed!");
+      } else {
+        get_roles(username).then((roles) =>
+          res
+            .status(200)
+            .json({ message: "Successfully logged in!", username, roles })
+        );
+        console.log("Logged in!");
+      }
+    })
+    .catch((error) => {
+      res
+        .status(404)
+        .json({ message: "Encountered problem while authenticating.", error });
+      console.log(error);
+    });
 }
 
 async function get_roles(username) {
@@ -419,7 +457,7 @@ async function get_roles(username) {
 }
 
 /**
- * 
+ *
  * Provide the following:
  * owner: String
  * pet_name: String
@@ -429,77 +467,100 @@ async function get_roles(username) {
  * payment_method: String
  * delivary_method: String
  * bid_rate: integer
- * 
+ *
  */
 function create_bid(req, res, next) {
-    const owner = req.body.owner;
-    const pet_name = req.body.pet_name;
-    const caretaker = req.body.caretaker;
-    const start_period = req.body.start_period;
-    const end_period = req.body.end_period;
-    const payment_method = req.body.payment_method;
-    const delivery_method = req.body.delivery_method;
-    const status = "PENDING";
-    const bid_rate = req.body.bid_rate;
+  const owner = req.body.owner;
+  const pet_name = req.body.pet_name;
+  const caretaker = req.body.caretaker;
+  const start_period = req.body.start_period;
+  const end_period = req.body.end_period;
+  const payment_method = req.body.payment_method;
+  const delivery_method = req.body.delivery_method;
+  const status = "PENDING";
+  const bid_rate = req.body.bid_rate;
 
-    pool.query(queries.add_initial_booking, [owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate])
-        .then(() => {
-            res.status(200).json({ message: "Booking created!" });
-            console.log("Successfully added booking!");
-        })
-        .catch(err => {
-            res.status(404).json({ message: "Encountered problem while creating bid.", err });
-            console.log(err);
+  pool
+    .query(queries.add_initial_booking, [
+      owner,
+      pet_name,
+      caretaker,
+      start_period,
+      end_period,
+      payment_method,
+      delivery_method,
+      status,
+      bid_rate,
+    ])
+    .then(() => {
+      res.status(200).json({ message: "Booking created!" });
+      console.log("Successfully added booking!");
+    })
+    .catch((err) => {
+      res
+        .status(404)
+        .json({ message: "Encountered problem while creating bid.", err });
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide the following:
  * user: owner or caretaker
  * username: String
- * 
+ *
  */
 function get_user_bookings(req, res, next) {
-    console.log(req.params);
+  console.log(req.params);
 
-    const user_type = req.params.user;
-    const username = req.params.username;
-    let query = user_type == "owner" ? queries.get_all_pet_owners_bookings : user_type == "caretaker" ? queries.get_all_caretaker_bookings : null;
+  const user_type = req.params.user;
+  const username = req.params.username;
+  let query =
+    user_type == "owner"
+      ? queries.get_all_pet_owners_bookings
+      : user_type == "caretaker"
+      ? queries.get_all_caretaker_bookings
+      : null;
 
-    pool.query(query, [username])
-        .then(result => {
-            res.status(200).json({ results: result.rows });
-            console.log("Successfully fetched booking!");
-        })
-        .catch(err => {
-            res.status(404).json({ message: "Encountered problem fetching bookings.", err });
-            console.log(err);
-    });   
-}
-
-/** 
- *
- * Nothing to provide.
- *  
-*/
-function get_bookings(req, res, next) {
-    console.log(req.params);
-
-    pool.query(queries.get_all_bookings)
-        .then(result => {
-            res.status(200).json({ results: result.rows });
-            console.log("Successfully fetched booking!");
-        })
-        .catch(err => {
-            res.status(404).json({ message: "Encountered problem fetching bookings.", err });
-            console.log(err);
+  pool
+    .query(query, [username])
+    .then((result) => {
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully fetched booking!");
+    })
+    .catch((err) => {
+      res
+        .status(404)
+        .json({ message: "Encountered problem fetching bookings.", err });
+      console.log(err);
     });
 }
-    
-    
+
 /**
- * 
+ *
+ * Nothing to provide.
+ *
+ */
+function get_bookings(req, res, next) {
+  console.log(req.params);
+
+  pool
+    .query(queries.get_all_bookings)
+    .then((result) => {
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully fetched booking!");
+    })
+    .catch((err) => {
+      res
+        .status(404)
+        .json({ message: "Encountered problem fetching bookings.", err });
+      console.log(err);
+    });
+}
+
+/**
+ *
  * Provide the following in path:
  * username: String
  *
@@ -880,120 +941,154 @@ function delete_leave_or_availability(req, res, next) {
 }
 
 /**
- * 
+ *
  * Provide following in query string:
  * owner: String
  * pet_name: String
  * caretkaer: String
  * start_period: String - Format: YYYY-MM-DD
  * end_period: same as above
- * 
+ *
  * Provide following for data:
  * decision: Boolean - True for Accept / False for Decline
- * 
+ *
  */
 function reply_booking(req, res, next) {
-    const { owner, pet_name, caretaker, start_period, end_period } = req.params;
-    const decision = req.body.decision;
-    const query = decision ? queries.accept_booking : queries.decline_booking;
+  const { owner, pet_name, caretaker, start_period, end_period } = req.params;
+  const decision = req.body.decision;
+  const query = decision ? queries.accept_booking : queries.decline_booking;
 
-    pool.query(query, [owner, pet_name, caretaker, start_period, end_period])
-        .then(result => {
-            res.status(200).json({ message: "Booking updated!" });
-            console.log("Successfully updated booking!");
-        })
-        .catch(err => {
-            res.status(404).json({ message: "Encountered problem updating booking.", error: err });
-            console.log(err);
+  pool
+    .query(query, [owner, pet_name, caretaker, start_period, end_period])
+    .then((result) => {
+      res.status(200).json({ message: "Booking updated!" });
+      console.log("Successfully updated booking!");
+    })
+    .catch((err) => {
+      res
+        .status(404)
+        .json({ message: "Encountered problem updating booking.", error: err });
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide following in query string:
  * owner: String
  * pet_name: String
  * caretkaer: String
  * start_period: String - Format: YYYY-MM-DD
  * end_period: same as above
- * 
+ *
  * Provide following for data:
  * rating: integer - between 0 and 5
  * review: String
- * 
+ *
  */
 function rate_booking(req, res, next) {
-    const { owner, pet_name, caretaker, start_period, end_period } = req.params;
-    const rating =  req.body["rating"] ? req.body.rating : null;
-    const review =  req.body["review"] ? req.body.review : null;
+  const { owner, pet_name, caretaker, start_period, end_period } = req.params;
+  const rating = req.body["rating"] ? req.body.rating : null;
+  const review = req.body["review"] ? req.body.review : null;
 
-    if(rating && review) {
-        pool.query(queries.add_review_and_remark, [owner, pet_name, caretaker, start_period, end_period, rating, review])
-            .then(result => {
-                res.status(200).json({ message: "Booking updated!" });
-                console.log("Successfully updated booking!");
-            })
-            .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", err });
-                console.log(err);
-        });
-        return; 
-    }
+  if (rating && review) {
+    pool
+      .query(queries.add_review_and_remark, [
+        owner,
+        pet_name,
+        caretaker,
+        start_period,
+        end_period,
+        rating,
+        review,
+      ])
+      .then((result) => {
+        res.status(200).json({ message: "Booking updated!" });
+        console.log("Successfully updated booking!");
+      })
+      .catch((err) => {
+        res
+          .status(404)
+          .json({ message: "Encountered problem updating booking.", err });
+        console.log(err);
+      });
+    return;
+  }
 
-    if(review) {
-        pool.query(queries.add_remark, [owner, pet_name, caretaker, start_period, end_period, review])
-            .then(result => {
-                res.status(200).json({ message: "Booking updated!" });
-                console.log("Successfully updated booking!");
-            })
-            .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", err });
-                console.log(err);
-        });
-        return;
-    }
+  if (review) {
+    pool
+      .query(queries.add_remark, [
+        owner,
+        pet_name,
+        caretaker,
+        start_period,
+        end_period,
+        review,
+      ])
+      .then((result) => {
+        res.status(200).json({ message: "Booking updated!" });
+        console.log("Successfully updated booking!");
+      })
+      .catch((err) => {
+        res
+          .status(404)
+          .json({ message: "Encountered problem updating booking.", err });
+        console.log(err);
+      });
+    return;
+  }
 
-    if(rating) {
-        pool.query(queries.add_review, [owner, pet_name, caretaker, start_period, end_period, rating])
-            .then(result => {
-                res.status(200).json({ message: "Booking updated!" });
-                console.log("Successfully updated booking!");
-            })
-            .catch(err => {
-                res.status(404).json({ message: "Encountered problem updating booking.", err });
-                console.log(err);
-        });
-        return;
-    }
+  if (rating) {
+    pool
+      .query(queries.add_review, [
+        owner,
+        pet_name,
+        caretaker,
+        start_period,
+        end_period,
+        rating,
+      ])
+      .then((result) => {
+        res.status(200).json({ message: "Booking updated!" });
+        console.log("Successfully updated booking!");
+      })
+      .catch((err) => {
+        res
+          .status(404)
+          .json({ message: "Encountered problem updating booking.", err });
+        console.log(err);
+      });
+    return;
+  }
 }
 
 /**
- * 
+ *
  * Provide following in query string:
  * owner: String
  * pet_name: String
  * caretkaer: String
  * start_period: String - Format: YYYY-MM-DD
  * end_period: same as above
- * 
+ *
  * Provide following for data:
  * rating: integer - between 0 and 5
  * review: String
- * 
+ *
  * OR
- * 
+ *
  * Provide following for data:
  * decision: Boolean - True for Accept / False for Decline
- * 
+ *
  */
 function handlebooking(req, res, next) {
-    if(req.body["rating"] || req.body["review"]) {
-        rate_booking(req, res, next);
-    } else if (req.body["decision"]) {
-        reply_booking(req, res, next);
-    } else {
-        res.status(404).json({ message: "Encountered problem updating booking." });
-    }
+  if (req.body["rating"] || req.body["review"]) {
+    rate_booking(req, res, next);
+  } else if (req.body["decision"]) {
+    reply_booking(req, res, next);
+  } else {
+    res.status(404).json({ message: "Encountered problem updating booking." });
+  }
 }
 
 /**
@@ -1190,14 +1285,20 @@ function get_top_ratings(req, res, next) {
 }
 
 function get_worst_ratings(req, res, next) {
-    console.log(req.params);
-    const username = req.params.username;
-    let query = queries.get_bottom_five_ratings;
-    pool.query(query, [username]).then(result => {
-        res.status(200).json({results: result.rows});
-    }).catch(err => {
-        res.status(404).json({ message: "Encountered problem fetching poor caretakers.", error: err });
-        console.log(err);
+  console.log(req.params);
+  const username = req.params.username;
+  let query = queries.get_bottom_five_ratings;
+  pool
+    .query(query, [username])
+    .then((result) => {
+      res.status(200).json({ results: result.rows });
+    })
+    .catch((err) => {
+      res.status(404).json({
+        message: "Encountered problem fetching poor caretakers.",
+        error: err,
+      });
+      console.log(err);
     })
     .catch((err) => {
       res.status(404).json({

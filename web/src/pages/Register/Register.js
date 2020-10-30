@@ -7,7 +7,7 @@ import {useForm} from 'react-hook-form';
 import {FormCustom} from '../../components/FormCustom';
 import {LOGIN} from '../../actions/actionTypes';
 // eslint-disable-next-line
-import {backendHost, createAlert} from '../../utils';
+import {backendHost, createAlert, getUserType} from '../../utils';
 
 /* eslint-disable fp/no-mutating-methods */
 const parseUserType = userType => {
@@ -35,40 +35,6 @@ const parseUserType = userType => {
 };
 /* eslint-enable */
 
-// Code-Gore below
-/* eslint-disable fp/no-mutation */
-const getUserType = type => {
-  const isBoth =
-    (type.indexOf('Part-Timer') !== -1 || type.indexOf('Part-Timer') !== -1) &&
-    type.indexOf('Owner') !== -1;
-  const isAdmin = type.indexOf('Administrator') !== -1;
-  const isPart = type.indexOf('Part-Timer') !== -1;
-  const isFull = type.indexOf('Full-Timer') !== -1;
-  const isCaretaker = isPart || isFull;
-  let userType = '';
-  if (isAdmin) {
-    userType = 'Administrator';
-  } else if (isBoth) {
-    userType = 'Both';
-  } else if (isCaretaker) {
-    userType = 'Caretaker';
-  } else {
-    userType = 'Owner';
-  }
-
-  let caretakerType = '';
-  if (isPart) {
-    caretakerType = 'parttime';
-  } else if (isFull) {
-    caretakerType = 'fulltime';
-  }
-
-  return {
-    userType,
-    caretakerType,
-  };
-};
-
 const Register = () => {
   const {register, handleSubmit, reset} = useForm();
   const [state, setState] = useState({isRegistered: false});
@@ -77,16 +43,16 @@ const Register = () => {
   const onSubmit = data => {
     // TODO: First we need to register the user with the API, then we need to do the registration
     const {username, userType, card, location, password, fullname} = data;
-    const type = parseUserType(userType);
+    const types = parseUserType(userType);
     const requestData = {
       username,
-      type,
+      types,
       card,
       location,
       password,
       full_name: fullname,
     };
-    fetch(`${backendHost}sds/register`, {
+    fetch(`${backendHost}/register`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(requestData),
