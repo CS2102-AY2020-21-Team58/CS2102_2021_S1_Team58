@@ -134,15 +134,15 @@ sql.query = {
     //Check if given username is in users table. Returns 1 if true.
     check_if_username_exists: 'SELECT COUNT(*) FROM users WHERE username=$1',
     //Check if given username is a petowner. Returns 1 if true.
-    check_if_pet_owner: 'SELECT COUNT(*) FROM users WHERE username=$1',
+    check_if_pet_owner: 'SELECT 1 FROM users WHERE username=$1',
     //check if given username is admin. Returns 1 if true.
-    check_if_admin: 'SELECT COUNT(*) FROM administrator WHERE username=$1',
+    check_if_admin: 'SELECT 1 FROM administrator WHERE username=$1',
     //check if given username is caretaker. Returns 1 if true.
-    check_if_caretaker: 'SELECT COUNT(*) FROM caretakers WHERE username=$1',
+    check_if_caretaker: 'SELECT 1 FROM caretakers WHERE username=$1',
     //check if given username if part time care taker. Returns 1 if true.
-    check_if_part_timer: 'SELECT COUNT(*) FROM part_timers WHERE username=$1',
+    check_if_part_timer: 'SELECT 1 FROM part_timers WHERE username=$1',
     //check if given username is full time care taker. Returns 1 if true.
-    check_if_full_timer: 'SELECT COUNT(*) FROM full_timers WHERE username=$1',
+    check_if_full_timer: 'SELECT 1 FROM full_timers WHERE username=$1',
     //get number of bookings with review for a caretaker of given username
     get_num_of_reviews: 'SELECT COUNT(*) FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL',
     //get caretakers with avg review below a particular value

@@ -157,7 +157,8 @@ function login(req, res, next) {
                 res.status(404).json({ message: "Failed to login user: incorrect credentials" });
                 console.log("Log in failed!");
             } else {
-                res.status(200).json({ message: "Successfully logged in!" });
+                get_roles(username)
+                    .then(roles => res.status(200).json({ message: "Successfully logged in!", username, roles }));
                 console.log("Logged in!");
             }
         })
@@ -165,6 +166,38 @@ function login(req, res, next) {
             res.status(404).json({ message: "Encountered problem while authenticating.", error });
             console.log(error);
         });
+}
+
+async function get_roles(username) {
+    const roles = [];
+
+    return pool.query(queries.check_if_pet_owner, [username])
+        .then(result => {
+            if(result.rowCount > 0) {
+                roles.push("Owner");
+            }
+        })
+        .then(() => pool.query(queries.check_if_admin, [username]))
+        .then(result => {
+            if(result.rowCount > 0) {
+                roles.push("Administrator");
+            }
+        })
+        .then(() => pool.query(queries.check_if_part_timer, [username]))
+        .then(result => {
+            if(result.rowCount > 0) {
+                roles.push("Part_Timer");
+            }
+        })
+        .then(() => pool.query(queries.check_if_full_timer, [username]))
+        .then(result => {
+            if(result.rowCount > 0) {
+                roles.push("Full_Timer");
+            }
+        })
+        .then(() => {
+            return Promise.resolve(roles);
+        })
 }
 
 /**
