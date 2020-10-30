@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
 	user: 'postgres',
-    password: 'password',
+    password: 'mustafa786',
     host: 'localhost',
     database: 'petpals',
     port: 5432
@@ -30,6 +30,7 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/getallservices/', get_pending_bids);
     app.get('/getmonthmaxjobs/', get_month_of_max_jobs);
     app.get('/getjobsinmaxjobsmonth/', get_jobs_max_job_month);
+    app.get('/getcaretakersamearea/:location', get_caretaker_same_area);
 
     // // UPDATE Methods
     // app.put('/route', function_name); // This is an example.
@@ -157,6 +158,27 @@ function get_jobs_max_job_month(req, res, next) {
     })
     .catch(err => {
         res.status(404).json({ message: "Encountered problems getting jobs in month with max jobs", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide following in path:
+ * area: String
+ * 
+ */
+function get_caretaker_same_area(req, res, next) {
+    console.log(req.params);
+    const location = req.params.location;
+    pool.query(queries.get_caretakers_same_area, [location])
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully got Cartakers in same area");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems getting caretakers in same area", error: err }).send(error);
         console.log(err);
     });
 }

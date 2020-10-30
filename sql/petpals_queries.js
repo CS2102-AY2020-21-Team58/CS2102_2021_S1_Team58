@@ -175,7 +175,7 @@ sql.query = {
     //Get all services of a pet
     get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
     //get all services petpals can provide
-    get_all_services: 'SELECT DISTINCT * FROM services',
+    get_all_services: 'SELECT * FROM services',
     //pet owner views all bookings
     get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
     //pet owner views all pending bookings
@@ -208,6 +208,8 @@ sql.query = {
     get_ratings_asc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating ASC',
     //retrieve all remarks + ratings of a caretaker in descending order
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
+    //get caretakers in the same area
+    get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
