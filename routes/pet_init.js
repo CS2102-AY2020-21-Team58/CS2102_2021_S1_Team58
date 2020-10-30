@@ -31,9 +31,6 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/getmonthmaxjobs/', get_month_of_max_jobs);
     app.get('/getjobsinmaxjobsmonth/', get_jobs_max_job_month);
 
-    
-    app.get('/getbookings/:user/:username', get_user_bookings)
-    app.delete('/caretakers/:username/services/:animal_name', delete_caretaker_services);
     // // UPDATE Methods
     // app.put('/route', function_name); // This is an example.
 
@@ -164,40 +161,6 @@ function get_jobs_max_job_month(req, res, next) {
     });
 }
 
-function get_user_bookings(req, res, next) {
-    console.log(req.params);
-
-    const user_type = req.params.user;
-    const username = req.params.username;
-    let query = user_type == "owner" ? queries.get_all_pet_owners_bookings : user_type == "caretaker" ? queries.get_all_caretaker_bookings : null;
-
-    pool.query(query, [username])
-        .then(result => {
-            res.status(200).json({ results: result.rows });
-            console.log("Successfully fetched booking!");
-        })
-        .catch(err => {
-            res.status(404).json({ message: "Encountered problem fetching bookings.", error: err });
-            console.log(err);
-    });   
-}
-
-function delete_caretaker_services(req, res, next) {
-    console.log(req);
-    const username = req.params.username;
-    const animal_name = req.params.animal_name;
-    const service = req.body.service;
-
-    pool.query(queries.delete_service_caretaker, [username, animal_name, service])
-        .then(result => {
-            res.status(200).json({ results: result.rows });
-            console.log("Successfully deleted service for caretaker!");
-        })
-        .catch(err => {
-            res.status(404).json({message: "Encountered problem deleting service for caretaker.", error: err});
-            console.log(err);
-        });
-}
 
 function register_user(req, res, next) {
     console.log(req.body);
