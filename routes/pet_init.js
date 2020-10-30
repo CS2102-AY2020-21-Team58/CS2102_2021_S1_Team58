@@ -82,7 +82,7 @@ function register_user(req, res, next) {
     let types = req.body.types;
     types = types.map(t => t.toLowerCase());
 
-    if(types.includes("full_timer") || types.includes("part_timer")) {
+    if(types.includes("full-timer") || types.includes("part-timer")) {
         res.status(400).json({ message: "Failed! Cannot be Part-timer and Full-timer at same time!" });
         return;
     }
@@ -117,9 +117,9 @@ function add_all_roles(roles, username) {
 function add_role(role, username) {
     if(role.toLowerCase()=="administrator") {
         pool.query(queries.add_admin, [username]);
-    } else if (role.toLowerCase()=="full_timer") { 
+    } else if (role.toLowerCase()=="full-timer") { 
         pool.query(queries.add_full_timer, [username]);
-    } else if (role.toLowerCase()=="part_timer") {
+    } else if (role.toLowerCase()=="part-timer") {
         pool.query(queries.add_part_timer, [username]);
     } else if (role.toLowerCase()=="owner") {
         pool.query(queries.add_pet_owner, [username]);
