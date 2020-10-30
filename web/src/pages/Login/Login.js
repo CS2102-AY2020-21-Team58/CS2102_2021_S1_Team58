@@ -12,16 +12,16 @@ const Login = () => {
 
   const onSubmit = data => {
     // TODO: Update with call to API
-    const {email} = data;
+    const {username} = data;
     Cookies.set('petpals', 'cookie');
     Cookies.set('petpals-userType', 'Administrator');
-    Cookies.set('petpals-email', email);
+    Cookies.set('petpals-username', username);
     Cookies.set('caretaker-type', 'fulltime');
     reset();
     dispatch({
       type: LOGIN,
       payload: {
-        userId: email,
+        userId: username,
         sessionCookie: 'cookie',
         userType: 'Administrator',
       },
