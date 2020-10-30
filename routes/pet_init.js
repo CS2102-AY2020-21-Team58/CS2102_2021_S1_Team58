@@ -79,41 +79,61 @@ function register_user(req, res, next) {
     const full_name = req.body.full_name;
     const location = req.body.location;
     const cardNumber = req.body.card;
-    const type = req.body.type;
-    let secondaryQuery;
+    let types = req.body.types;
+    types = types.map(t => t.toLowerCase());
 
-    if(type=="Administrator") {
-        secondaryQuery = queries.add_admin;
-    } else if (type=="Full_Timer") {    
-        secondaryQuery = queries.add_care_taker;
-    } else if (type=="Part_Timer") {
-        secondaryQuery = queries.add_care_taker;
-    } else if (type=="Owner") {
-        secondaryQuery = queries.add_pet_owner;
-    } else {
-        return;
-    }
+    console.log(types);
+
+    const containsCaretaker = types.includes("full_timer") || types.includes("part_timer");
 
     pool.query(queries.add_user, [username, password, full_name, location, cardNumber])
-        .catch(err => { 
-            return Promise.reject("Error: User with username already exists!");
+        .catch(err => {
+            console.log("Username already in use!");
+            throw "Username already in use!";
         })
-        .then(() => pool.query(secondaryQuery, [username]))
-        .then(() => {
-            if (type == "Part_Timer") {
-                pool.query(queries.add_part_timer, [username])
-                    .catch(() => Promise.reject("Error: Problem adding caretaker."));
-            } else if (type == "Full_Timer") {
-                pool.query(queries.add_full_timer, [username])
-                    .catch(() => Promise.reject("Error: Problem adding caretaker."));
-            } else {
-                // Do nothing
+        .then(()=> {
+            if(containsCaretaker) {
+                pool.query(queries.add_care_taker, [username]);
             }
         })
-        .then(() => res.status(200).json({ message: "User added successfully." }))
+        .then(()=> add_all_roles(types, username))
+        .then(() => res.status(200).json({ message: "Successfully registered user!" }))
         .catch(error => {
             console.log(error);
+            cancel_registration(username);
             res.status(400).json({ error });
+        });
+}
+
+function add_all_roles(roles, username) {
+    for(const r of roles) {
+        add_role(r, username);
+    }
+}
+
+function add_role(role, username) {
+    if(role.toLowerCase()=="administrator") {
+        pool.query(queries.add_admin, [username]);
+    } else if (role.toLowerCase()=="full_timer") { 
+        pool.query(queries.add_full_timer, [username]);
+    } else if (role.toLowerCase()=="part_timer") {
+        pool.query(queries.add_part_timer, [username]);
+    } else if (role.toLowerCase()=="owner") {
+        pool.query(queries.add_pet_owner, [username]);
+    } else {
+        throw "Incorrect user type! Registration aborted.";
+    }
+}
+
+function cancel_registration(username) {
+    pool.query(queries.delete_admin, [username])
+        .then(()=> pool.query(queries.delete_full_timer, [username]))
+        .then(()=> pool.query(queries.delete_part_timer, [username]))
+        .then(()=> pool.query(queries.delete_caretaker, [username]))
+        .then(()=> pool.query(queries.delete_owner, [username]))
+        .then(()=> pool.query(queries.delete_user, [username]))
+        .catch(error => {
+            throw "Error encountered while registering user!";
         });
 }
 
