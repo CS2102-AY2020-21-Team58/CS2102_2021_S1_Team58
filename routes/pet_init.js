@@ -6,11 +6,11 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-  user: PROCESS.ENV.DB_USER,
-  password: PROCESS.ENV.DB_PASSWORD,
-  host: PROCESS.ENV.DB_HOST,
-  database: PROCESS.ENV.DB_NAME,
-  port: PROCESS.ENV.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
 module.exports.initRouter = function initRouter(app) {
