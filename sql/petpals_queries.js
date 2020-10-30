@@ -37,6 +37,24 @@ sql.query = {
     ORDER BY jobs \
     DESC LIMIT 1;',
 
+    get_jobs_number_during_month_with_max_jobs: '\
+    SELECT MAX(c1+c2+c3) \
+    FROM (SELECT * \
+            FROM (SELECT COUNT(*) AS c1, DATE_PART(\'month\', b1.start_period) AS month1 \
+                    FROM bookings b1 GROUP BY DATE_PART(\'month\', b1.start_period)) AS t1 FULL OUTER JOIN \
+                        (SELECT COUNT(*) AS c2, DATE_PART(\'month\', b1.end_period) AS month2 \
+                            FROM bookings b1 \
+                            WHERE DATE_PART(\'month\', b1.start_period) <> DATE_PART(\'month\', b1.end_period) \
+                            GROUP BY DATE_PART(\'month\', b1.end_period)) AS t2 \
+                    ON t1.month1 = t2.month2 FULL OUTER JOIN \
+                    (SELECT COUNT(*) AS c3, DATE_PART(\'month\', month) AS month3 \
+                        FROM (SELECT generate_series(date_trunc(\'month\',  start_period), end_period, \'1 month\')::date as month \
+                                FROM bookings \
+                                WHERE  DATE_PART(\'month\', end_period) - DATE_PART(\'month\', start_period) > 1) as temp \
+                                GROUP BY DATE_PART(\'month\', month)) AS t3 \
+                    ON t2.month2 = t3.month3) as ans \
+    WHERE month1 = month2 AND month2 = month3',
+
     //LOGIN: returns 1 if username-password combination exists. Get all details
     check_login_details: 'SELECT 1 FROM users WHERE username=$1 AND password=$2',
     get_user_details: 'SELECT * FROM users WHERE username=$1',
@@ -156,6 +174,8 @@ sql.query = {
     get_pet_owners_pets: 'SELECT * FROM pets WHERE owner = $1',
     //Get all services of a pet
     get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
+    //get all services petpals can provide
+    get_all_services: 'SELECT DISTINCT * FROM services',
     //pet owner views all bookings
     get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
     //pet owner views all pending bookings
