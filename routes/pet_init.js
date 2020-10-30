@@ -22,15 +22,15 @@ module.exports.initRouter = function initRouter(app) {
     // POST Methods
     app.post('/register', register_user);
     app.post('/login', login);
-    app.post('/:username/caretakers/leaves_availability', add_leave_or_availability);
-    app.post('/:username/caretakers/services', add_caretaker_animals);
-    app.post('/:username/caretakers/services/:animal_name', add_caretaker_services);
+    app.post('/:user/caretakers/leaves_availability', add_leave_or_availability);
+    app.post('/:user/caretakers/services', add_caretaker_animals);
+    app.post('/:user/caretakers/services/:animal_name', add_caretaker_services);
 
     // GET Methods
-    app.get('/:username/owners/search/caretakers/:start_period/:end_period/:pet_name', get_available_caretakers);
-    app.get('/:username/caretakers/leaves_availability', get_leave_or_availability);
-    app.get('/:username/caretakers/services', get_caretaker_animals);
-    app.get('/:username/caretakers/services/:animal_name', get_caretaker_services);
+    app.get('/:user/owners/search/caretakers/:start_period/:end_period/:pet_name', get_available_caretakers);
+    app.get('/:user/caretakers/leaves_availability', get_leave_or_availability);
+    app.get('/:user/caretakers/services', get_caretaker_animals);
+    app.get('/:user/caretakers/services/:animal_name', get_caretaker_services);
     //month must be month number, year must be year number
     app.get('/salary_list/:date', get_all_salaries);
     app.get('/salary_total/:date', get_total_salaries);
@@ -42,12 +42,12 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/worst_ratings/:username', get_worst_ratings);
 
     // UPDATE Methods
-    app.put('/:username/caretakers/services', update_caretaker_animals);
+    app.put('/:user/caretakers/services', update_caretaker_animals);
 
     // DELETE Methods
-    app.delete('/:username/caretakers/leaves_availability', delete_leave_or_availability);
-    app.delete('/:username/caretakers/services', delete_caretaker_animals);
-    app.delete('/:username/caretakers/services/:animal_name', delete_caretaker_services);
+    app.delete('/:user/caretakers/leaves_availability', delete_leave_or_availability);
+    app.delete('/:user/caretakers/services', delete_caretaker_animals);
+    app.delete('/:user/caretakers/services/:animal_name', delete_caretaker_services);
 }
 
 function query(req, fld) {
@@ -115,7 +115,7 @@ function login(req, res, next) {
  */
 function get_caretaker_animals(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
 
     pool.query(queries.get_single_caretakers_prices, [username])
         .then(result => {
@@ -140,7 +140,7 @@ function get_caretaker_animals(req, res, next) {
  */
 function add_caretaker_animals(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.body.animal_name;
     const price = req.body.price;
 
@@ -166,7 +166,7 @@ function add_caretaker_animals(req, res, next) {
  */
 function delete_caretaker_animals(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.body.animal_name;
 
     pool.query(queries.delete_pet_type_caretaker, [username, animal_name])
@@ -192,7 +192,7 @@ function delete_caretaker_animals(req, res, next) {
  */
 function update_caretaker_animals(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.body.animal_name;
     const price = req.body.price;
 
@@ -216,7 +216,7 @@ function update_caretaker_animals(req, res, next) {
  */
 function get_caretaker_services(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.params.animal_name;
 
     pool.query(queries.get_caretaker_services, [animal_name, username])
@@ -242,7 +242,7 @@ function get_caretaker_services(req, res, next) {
  */
 function add_caretaker_services(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.params.animal_name;
     const service = req.body.service;
 
@@ -269,7 +269,7 @@ function add_caretaker_services(req, res, next) {
  */
 function delete_caretaker_services(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const animal_name = req.params.animal_name;
     const service = req.body.service;
 
@@ -297,7 +297,7 @@ function get_available_caretakers(req, res, next) {
     console.log(req);
     const start_period = req.params.start_period;
     const end_period = req.params.end_period;
-    const username = req.params.username;
+    const username = req.params.user;
     const pet_name = req.params.pet_name;
 
     pool.query(queries.search_caretaker, [start_period, end_period, username, pet_name])
@@ -323,7 +323,7 @@ function get_available_caretakers(req, res, next) {
  */
 function add_leave_or_availability(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const start_period = req.body.start_period;
     const end_period = req.body.end_period;
 
@@ -386,7 +386,7 @@ function add_leave_or_availability(req, res, next) {
  */
 function delete_leave_or_availability(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
     const start_period = req.body.start_period;
     const end_period = req.body.end_period;
 
@@ -446,7 +446,7 @@ function delete_leave_or_availability(req, res, next) {
  */
 function get_leave_or_availability(req, res, next) {
     console.log(req);
-    const username = req.params.username;
+    const username = req.params.user;
 
     pool.query(queries.check_if_part_timer, [username])
         .then(result => {
