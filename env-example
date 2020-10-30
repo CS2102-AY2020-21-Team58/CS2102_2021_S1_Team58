@@ -1,0 +1,6 @@
+# Put this in a file named .env at project root 
+DB_HOST=localhost
+DB_PORT=5432
+DB_PASSWORD=fskfksd
+DB_NAME=fksjf
+DB_USER=sw

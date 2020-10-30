@@ -1,6 +1,7 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const pet_router = require('./routes/pet_init');
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const pet_router = require("./routes/pet_init");
 
 const app = express();
 const PORT = 5000;
@@ -15,5 +16,5 @@ app.use(
 pet_router.initRouter(app);
 
 app.listen(PORT, () => {
-  console.log(`App running on port ${PORT}.`)
+  console.log(`App running on port ${PORT}.`);
 });
