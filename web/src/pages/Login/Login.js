@@ -1,44 +1,60 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
+import {Redirect} from 'react-router-dom';
 import {Button, Form} from 'react-bootstrap';
 import {useForm} from 'react-hook-form';
 import Cookies from 'js-cookie';
 import {FormCustom} from '../../components/FormCustom';
 import {LOGIN} from '../../actions/actionTypes';
+import {backendHost, createAlert, getUserType} from '../../utils';
 
 const Login = () => {
   const {register, handleSubmit, reset} = useForm();
+  const [state, setState] = useState({isLogin: false});
   const dispatch = useDispatch();
 
   const onSubmit = data => {
-    // TODO: Update with call to API
-    const {email} = data;
-    Cookies.set('petpals', 'cookie');
-    Cookies.set('petpals-userType', 'Administrator');
-    Cookies.set('petpals-email', email);
-    Cookies.set('caretaker-type', 'fulltime');
-    reset();
-    dispatch({
-      type: LOGIN,
-      payload: {
-        userId: email,
-        sessionCookie: 'cookie',
-        userType: 'Administrator',
-      },
-    });
+    fetch(`${backendHost}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Not 200');
+        }
+        return res.json();
+      })
+      .then(res => {
+        const {userType, caretakerType} = getUserType(res.roles);
+
+        Cookies.set('petpals', 'cookie');
+        Cookies.set('petpals-userType', userType);
+        Cookies.set('petpals-username', data.username);
+        Cookies.set('caretaker-type', caretakerType);
+        reset();
+        dispatch({
+          type: LOGIN,
+          payload: {
+            userId: data.username,
+            sessionCookie: 'cookie',
+            userType,
+          },
+        });
+        setState({...state, isLogin: true});
+      })
+      .catch(() => createAlert('Failed to login'));
   };
+
+  if (state.isLogin) {
+    return <Redirect to="/" />;
+  }
 
   return (
     <FormCustom onSubmit={handleSubmit(onSubmit)}>
       <Form.Group>
-        <Form.Label>Email address</Form.Label>
-        <Form.Control
-          type="email"
-          placeholder="Enter email"
-          name="email"
-          ref={register}
-          required
-        />
+        <Form.Label>Username</Form.Label>
+        <Form.Control type="text" name="username" ref={register} required />
         <Form.Text className="text-muted">
           Please give a valid email that you have registered with
         </Form.Text>

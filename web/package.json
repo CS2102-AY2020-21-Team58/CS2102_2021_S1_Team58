@@ -18,6 +18,8 @@
     "jest-environment-jsdom-sixteen": "^1.0.3",
     "js-cookie": "^2.2.1",
     "lint-staged": "^10.4.0",
+    "moment": "2.24.0",
+    "moment-timezone": "0.5.28",
     "prettier": "^2.1.2",
     "prop-types": "^15.7.2",
     "react": "^17.0.0",
@@ -61,5 +63,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "resolutions": {
+    "moment": "2.24.0"
   }
 }

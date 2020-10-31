@@ -34,14 +34,18 @@ const Navbar = props => {
             className={style.nav_links}
             title="Bids"
             id="bids-dropdown">
-            {userType === 'Owner' || userType === 'Administrator' ? (
+            {userType === 'Owner' ||
+            userType === 'Administrator' ||
+            userType === 'Both' ? (
               <Link to="/owner-bids">
                 <NavDropdown.Item href="/owner-bids">
                   Bids (Owner)
                 </NavDropdown.Item>
               </Link>
             ) : null}
-            {userType === 'Caretaker' || userType === 'Administrator' ? (
+            {userType === 'Caretaker' ||
+            userType === 'Administrator' ||
+            userType === 'Both' ? (
               <Link to="/caretaker-bids">
                 <NavDropdown.Item href="/caretaker-bids">
                   Bids (Caretaker)
@@ -52,16 +56,20 @@ const Navbar = props => {
         ) : null}
       </Nav>
       <Nav className={`mr-auto ${style.nav_flex}`}>
-        {(isLoggedIn && userType === 'Owner') ||
-        userType === 'Administrator' ? (
+        {isLoggedIn &&
+        (userType === 'Owner' ||
+          userType === 'Administrator' ||
+          userType === 'Both') ? (
           <Link to="/pets">
             <NavbarBS.Text className={style.nav_links}>Pets</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
       <Nav className={`mr-auto ${style.nav_flex}`}>
-        {(isLoggedIn && userType === 'Caretaker') ||
-        userType === 'Administrator' ? (
+        {isLoggedIn &&
+        (userType === 'Caretaker' ||
+          userType === 'Administrator' ||
+          userType === 'Both') ? (
           <Link to="/leaves">
             <NavbarBS.Text className={style.nav_links}>Leaves</NavbarBS.Text>
           </Link>
@@ -76,7 +84,14 @@ const Navbar = props => {
       </Nav>
       {isLoggedIn ? (
         <NavbarBS.Collapse className="justify-content-end">
-          <NavbarBS.Text>User Type: {userType}</NavbarBS.Text>
+          <>
+            <NavbarBS.Text className={style.nav_links}>
+              User Type: {userType}
+            </NavbarBS.Text>
+            <Link to="/logout">
+              <NavbarBS.Text>Logout</NavbarBS.Text>
+            </Link>
+          </>
         </NavbarBS.Collapse>
       ) : null}
     </NavbarBS>
