@@ -44,12 +44,12 @@ END IF; END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE part_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
     CHECK(is_full_timer(username)=0)
 );
 
 CREATE TABLE full_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
     CHECK(is_part_timer(username)=0)
 );
 
