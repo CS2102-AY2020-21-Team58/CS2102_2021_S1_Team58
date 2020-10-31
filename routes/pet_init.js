@@ -105,11 +105,9 @@ function add_pet_required_services(req, res, next) {
     })
     .then(() => add_all_services(owner_name, pet_name, list_services))
     .then((result) => {
-      res
-        .status(200)
-        .json({
-          message: "Successfully put services required for a pet of an owner!",
-        });
+      res.status(200).json({
+        message: "Successfully put services required for a pet of an owner!",
+      });
       console.log("Successfully added services for an owners pet!");
     })
     .catch((err) => {
@@ -316,11 +314,9 @@ function register_user(req, res, next) {
   types = types.map((t) => t.toLowerCase());
 
   if (types.includes("full-timer") && types.includes("part-timer")) {
-    res
-      .status(400)
-      .json({
-        message: "Failed! Cannot be Part-timer and Full-timer at same time!",
-      });
+    res.status(400).json({
+      message: "Failed! Cannot be Part-timer and Full-timer at same time!",
+    });
     return;
   }
 
@@ -392,33 +388,6 @@ function cancel_registration(username) {
     .then(() => pool.query(queries.delete_user, [username]))
     .catch((error) => {
       console.log(error);
-      throw "Error encountered while registering user!";
-    });
-}
-
-function add_role(role, username) {
-  if (role.toLowerCase() == "administrator") {
-    pool.query(queries.add_admin, [username]);
-  } else if (role.toLowerCase() == "full-timer") {
-    pool.query(queries.add_full_timer, [username]);
-  } else if (role.toLowerCase() == "part-timer") {
-    pool.query(queries.add_part_timer, [username]);
-  } else if (role.toLowerCase() == "owner") {
-    pool.query(queries.add_pet_owner, [username]);
-  } else {
-    throw "Incorrect user type! Registration aborted.";
-  }
-}
-
-function cancel_registration(username) {
-  pool
-    .query(queries.delete_admin, [username])
-    .then(() => pool.query(queries.delete_full_timer, [username]))
-    .then(() => pool.query(queries.delete_part_timer, [username]))
-    .then(() => pool.query(queries.delete_caretaker, [username]))
-    .then(() => pool.query(queries.delete_owner, [username]))
-    .then(() => pool.query(queries.delete_user, [username]))
-    .catch((error) => {
       throw "Error encountered while registering user!";
     });
 }
