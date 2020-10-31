@@ -6,11 +6,12 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
 });
 
 module.exports.initRouter = function initRouter(app) {
@@ -26,8 +27,15 @@ module.exports.initRouter = function initRouter(app) {
     app.post("/:user/caretakers/leaves_availability", add_leave_or_availability);
     app.post("/:user/caretakers/services", add_caretaker_animals);
     app.post("/:user/caretakers/services/:animal_name", add_caretaker_services);
+    app.post('/reqpetservice/:petowner/:petname', add_pet_required_services);
 
-    // GET Methods
+    // // GET Methods
+    app.get('/petsofowner/:username', get_pets_of_owner);
+    app.get('/allservices/', get_all_services);
+    app.get('/pendingbids/', get_pending_bids);
+    app.get('/monthmaxjobs/', get_month_of_max_jobs);
+    app.get('/jobsinmaxjobsmonth/', get_jobs_max_job_month);
+    app.get('/sameareacaretaker/:location', get_same_area_caretaker);
     app.get('/booking', get_bookings);
     app.get('/booking/:user/:username', get_user_bookings);
     app.get('/:user/owners/search/caretakers/:start_period/:end_period/:pet_name', get_available_caretakers);
@@ -52,6 +60,184 @@ module.exports.initRouter = function initRouter(app) {
     app.delete('/:user/caretakers/services', delete_caretaker_animals);
     app.delete('/:user/caretakers/services/:animal_name', delete_caretaker_services);
 }
+
+function query(req, fld) {
+	return req.query[fld] ? req.query[fld] : '';
+}
+
+
+/**
+ *
+ * Provide the following in path:
+ * onwername: String
+ * petname: String, from pets table
+ *
+ * Provide the following in request body:
+ * service: String --> add multiple services (in services table) separated by a comma 
+ *
+ */
+function add_pet_required_services(req, res, next) {
+    console.log(req.params);
+    console.log(req.body);
+    const owner_name = req.params.petowner;
+    const pet_name = req.params.petname;
+    const service = req.body.service;
+    const list_services = service.split(",");
+
+    pool.query(queries.check_if_pet_owner, [owner_name])
+    .catch((err) => {
+        res.status(404).json({
+          message: "Error: This is not a pet owner!",
+          error: err,
+        });
+        console.log(err);
+      })
+    .then(()=> add_all_services(owner_name, pet_name, list_services))
+    .then((result) => {
+      res.status(200).json({  message: "Successfully put services required for a pet of an owner!" });
+      console.log("Successfully added services for an owners pet!");
+    })
+    .catch((err) => {
+      res.status(404).json({
+        message: "Encountered problem adding services for an owners pet.",
+        error: err,
+      });
+      console.log(err);
+    });
+
+}
+
+function add_all_services(owner_name, pet_name, list_services) {
+    for(const eachservice of list_services) {
+        try {
+            pool.query(queries.add_service_pet, [owner_name, pet_name, eachservice])
+            // helper_add_pet_required_services(owner_name, pet_name, eachservice);
+        } catch (error) {
+            throw error;
+        }
+    }
+}
+
+/**
+ * 
+ * Provide following in path:
+ * owner_name: String --> Has to be an owner
+ * 
+ */
+function get_pets_of_owner(req, res, next) {
+    console.log(req.params);
+    const owner_name = req.params.username;
+    pool.query(queries.get_pet_owners_pets, [owner_name])
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully fetched pets with their services!");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems fetching pets of owners", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide nothing;
+ * 
+ */
+function get_all_services(req, res, next) {
+    console.log(req.params);
+    pool.query(queries.get_all_services)
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully fetched services PetPals can provide");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems fetching services PetPals can provide", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide following in path:
+ * owner_name: String --> Has to be an owner
+ * 
+ */
+function get_pending_bids(req, res, next) {
+    console.log(req.params);
+    const owner_name = req.params.username;
+    pool.query(queries.get_all_pending_pet_owners_bookings, [owner_name])
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully got bids of an Owner");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems getting bids of an owner", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide nothing;
+ * 
+ */
+function get_month_of_max_jobs(req, res, next) {
+    console.log(req.params);
+    pool.query(queries.get_month_where_max_pets_taken_care)
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully got month with max jobs");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems getting month with max jobs", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide nothing;
+ * 
+ */
+function get_jobs_max_job_month(req, res, next) {
+    console.log(req.params);
+    pool.query(queries.get_jobs_number_during_month_with_max_jobs)
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully got jobs in month with max jobs");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems getting jobs in month with max jobs", error: err }).send(error);
+        console.log(err);
+    });
+}
+
+/**
+ * 
+ * Provide following in path:
+ * location area: String
+ * 
+ */
+function get_same_area_caretaker(req, res, next) {
+    console.log(req.params);
+    const location = req.params.location;
+    pool.query(queries.get_caretakers_same_area, [location])
+    .then(result => {
+        console.log(result);
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully got Cartakers in same area");
+    })
+    .catch(err => {
+        res.status(404).json({ message: "Encountered problems getting caretakers in same area", error: err }).send(error);
+        console.log(err);
+    });
+}
+
 
 /**
  * 
