@@ -197,10 +197,16 @@ sql.query = {
     //retrieve all remarks + ratings of a caretaker in descending order
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
     // get fields for advertisement
-    get_advertisement: 'SELECT * FROM ((SELECT average_rating FROM caretakers WHERE username = $1) JOIN \
-        (SELECT COUNT(*) AS total_rated_jobs FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL))',
+    get_advertisement: 'SELECT average_rating, COUNT(*) FROM caretakers, bookings \
+        WHERE username = caretaker AND caretaker = $1 AND rating IS NOT NULL \
+        GROUP BY username, average_rating',
     //retrieve all remarks + ratings of a caretaker in descending order by date
-    get_ratings_desc_date: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY end_period DESC',
+    get_ratings_desc_date: 'SELECT owner, pet_name, \
+    (SELECT type FROM pets P WHERE P.pet_name = B.pet_name AND P.owner = B.owner), start_period, end_period, rating, remarks \
+    FROM bookings B WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY end_period DESC',
+    get_top_five_ratings_verbose: 'SELECT owner, pet_name, \
+    (SELECT type FROM pets P WHERE P.pet_name = B.pet_name AND P.owner = B.owner), start_period, end_period, rating, remarks \
+    FROM bookings B WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC LIMIT 5',
 
 
 
