@@ -68,6 +68,7 @@ const Leaves = () => {
   };
 
   const submitNewPet = async data => {
+    console.log(data);
     const username = Cookies.get('petpals-username');
     if (data.price !== undefined) {
       try {
@@ -235,7 +236,7 @@ const Leaves = () => {
         variant="primary"
         onClick={submitLeave}
         className={style.leaves_button}>
-        Submit Leaves
+        {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
       </Button>
       <h3 className={style.pet_types}>Pet Types and Services Supported</h3>
       {Object.entries(state.supported)

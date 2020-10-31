@@ -233,7 +233,7 @@ CREATE OR REPLACE FUNCTION decline_clashing() RETURNS trigger AS $ret$
                     FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
                     WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
         ELSE
-            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status=PENDING" AND
+            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status" = 'PENDING' AND
                 caretaker=NEW.caretaker AND
                 EXISTS (SELECT 1
                     FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates

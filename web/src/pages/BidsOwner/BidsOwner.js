@@ -384,6 +384,7 @@ const BidsOwner = () => {
           }}>
           <option value="">Select a pet</option>
           <option value="garfield">garfield</option>
+          <option value="lion">lion</option>
         </select>
       </div>
       <Button

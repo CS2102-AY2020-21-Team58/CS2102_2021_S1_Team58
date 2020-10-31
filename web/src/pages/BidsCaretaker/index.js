@@ -32,10 +32,16 @@ const BidsCaretaker = () => {
       Cell: ({row}) => {
         return (
           <>
-            <Button variant="success" onClick={() => {}}>
+            <Button
+              variant="success"
+              // eslint-disable-next-line
+              onClick={() => submitAction('accept', row.values)}>
               Accept
             </Button>
-            <Button variant="danger" onClick={() => {}}>
+            <Button
+              variant="danger"
+              // eslint-disable-next-line
+              onClick={() => submitAction('decline', row.values)}>
               Decline
             </Button>
           </>
@@ -43,6 +49,26 @@ const BidsCaretaker = () => {
       },
     },
   ];
+
+  const submitAction = async (action, row) => {
+    const username = Cookies.get('petpals-username');
+    const {owner, pet_name: petName, start_period: date} = row;
+
+    try {
+      await fetch(
+        `${backendHost}/booking/${owner}/${petName}/${username}/${date}/${date}`,
+        {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({decision: action === 'accept'}),
+        }
+      ).then(fetchStatusHandler);
+      await fetchData();
+    } catch (error) {
+      console.log(error);
+      createAlert('Failed to submit action');
+    }
+  };
 
   const fetchData = async () => {
     const username = Cookies.get('petpals-username');
@@ -71,7 +97,7 @@ const BidsCaretaker = () => {
       });
       // eslint-disable-next-line
       pendingBookings = bookingsResponse.results.filter(
-        booking => booking.status === 'ACCEPTED'
+        booking => booking.status === 'PENDING'
       );
       pendingBookings.forEach(booking => {
         // eslint-disable-next-line

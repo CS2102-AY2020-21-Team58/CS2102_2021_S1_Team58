@@ -957,6 +957,7 @@ function reply_booking(req, res, next) {
   const { owner, pet_name, caretaker, start_period, end_period } = req.params;
   const decision = req.body.decision;
   const query = decision ? queries.accept_booking : queries.decline_booking;
+  console.log(req.params);
 
   pool
     .query(query, [owner, pet_name, caretaker, start_period, end_period])
