@@ -86,9 +86,19 @@ function add_pet_required_services(req, res, next) {
     const owner_name = req.params.petowner;
     const pet_name = req.params.petname;
     const service = req.body.service;
-
-    pool
-    .query(queries.add_service_pet, [owner_name, pet_name, service])
+    const list_services = service.split(",");
+    console.log(typeof service);
+    console.log(service.split(","));
+    console.log(service.split(",")[1]);
+    pool.query(queries.check_if_pet_owner, [owner_name])
+    .catch((err) => {
+        res.status(404).json({
+          message: "Error: This is now a pet owner!",
+          error: err,
+        });
+        console.log(err);
+      })
+    .then(()=> add_all_services(owner_name, pet_name, list_services))
     .then((result) => {
       res.status(200).json({  message: "Successfully put services required for a pet of an owner!" });
       console.log("Successfully added services for an owners pet!");
@@ -100,8 +110,19 @@ function add_pet_required_services(req, res, next) {
       });
       console.log(err);
     });
+
 }
 
+function add_all_services(owner_name, pet_name, list_services) {
+    for(const eachservice of list_services) {
+        try {
+            pool.query(queries.add_service_pet, [owner_name, pet_name, eachservice])
+            // helper_add_pet_required_services(owner_name, pet_name, eachservice);
+        } catch (error) {
+            throw error;
+        }
+    }
+}
 
 /**
  * 
