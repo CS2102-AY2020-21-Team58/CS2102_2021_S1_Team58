@@ -1,16 +1,42 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
+import moment from 'moment';
+import 'moment-timezone';
+import Cookies from 'js-cookie';
 import {Button, Modal as ModalBS} from 'react-bootstrap';
 import Table from '../../components/Table';
 import Modal from '../../components/Modal';
+import {
+  backendHost,
+  fetchStatusHandler,
+  generateStartEnd,
+  createAlert,
+} from '../../utils';
+import style from './BidsOwner.module.css';
 
 const BidsOwner = () => {
+  const todayDate = moment().tz('Asia/Singapore').format('YYYY-MM-DD');
+  const maxDate = generateStartEnd(todayDate).end;
+
+  const [state, setState] = useState({
+    newBidsTable: {columns: [], data: []},
+    upcomingBidsTable: {columns: [], data: []},
+    pastBidsTable: {columns: [], data: []},
+    showBidsTable: false,
+    form: {start: todayDate, end: todayDate, pet: ''},
+  });
+  const [modalState, setModalState] = useState({
+    modalToShow: '',
+    reviewModalData: {},
+    bidModalData: {},
+    bidDatePickerData: {},
+    showModal: false,
+  });
+
   // Dummy Data
-  const columns = [
+  const newBidsColumns = [
     {Header: 'Caretaker', accessor: 'username'},
-    {Header: 'Pet Name', accessor: 'pet'},
+    {Header: 'Name', accessor: 'first_name'},
     {Header: 'Bid Price', accessor: 'price'},
-    {Header: 'Start Date', accessor: 'start_date'},
-    {Header: 'End Date', accessor: 'end_date'},
     {
       Header: () => null,
       id: 'book',
@@ -22,36 +48,18 @@ const BidsOwner = () => {
     },
   ];
 
-  const data = [
-    {
-      username: 'a',
-      pet: 'b',
-      price: 1,
-      start_date: '2020/10/10',
-      end_date: '2020/10/12',
-    },
-    {
-      username: 'c',
-      pet: 'd',
-      price: 12,
-      start_date: '2020/10/20',
-      end_date: '2020/10/22',
-    },
-  ];
-
   const pastColumns = [
-    {Header: 'Caretaker', accessor: 'username'},
-    {Header: 'Pet Name', accessor: 'pet'},
-    {Header: 'Bid Price', accessor: 'price'},
-    {Header: 'Start Date', accessor: 'start_date'},
-    {Header: 'End Date', accessor: 'end_date'},
+    {Header: 'Caretaker', accessor: 'caretaker'},
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Bid Price', accessor: 'bid_rate'},
+    {Header: 'Job Date', accessor: 'start_period'},
     {
       Header: 'Ratings',
       id: 'rating',
       // eslint-disable-next-line
       Cell: ({row}) => {
         // eslint-disable-next-line
-        return row.original.rating !== undefined ? (
+        return row.original.rating != undefined ? (
           // eslint-disable-next-line
           <p>{row.original.rating}/5</p>
         ) : (
@@ -62,74 +70,208 @@ const BidsOwner = () => {
     },
   ];
 
-  const pastData = [
-    {
-      username: 'a',
-      pet: 'b',
-      price: 1,
-      start_date: '2020/10/10',
-      end_date: '2020/10/12',
-    },
-    {
-      username: 'c',
-      pet: 'd',
-      price: 12,
-      start_date: '2020/10/20',
-      end_date: '2020/10/22',
-      rating: 4,
-    },
+  const upcomingColumns = [
+    {Header: 'Caretaker', accessor: 'caretaker'},
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Bid Price', accessor: 'bid_rate'},
+    {Header: 'Job Date', accessor: 'start_period'},
   ];
 
-  const [state, setState] = useState({
-    modalToShow: '',
-    showModal: false,
-    reviewModalData: {},
-    bidModalData: {},
-    bidDatePickerData: {},
-    newBidsTable: {columns, data},
-    pastBidsTable: {columns: pastColumns, data: pastData},
-  });
-
   const handleModalClose = () =>
-    setState({...state, modalToShow: '', showModal: false});
+    setModalState({...modalState, modalToShow: '', showModal: false});
 
   // Hacky way to store the row data for displaying on the modal
   const bidModalClosure = row => () => {
-    setState({
-      ...state,
+    setModalState({
+      ...modalState,
       showModal: true,
       modalToShow: 'bid',
-      bidModalData: {...row, booking_date: row.start_date.replaceAll('/', '-')},
+      bidModalData: row,
     });
   };
 
   const ratingsModalClosure = row => () => {
-    setState({
-      ...state,
+    setModalState({
+      ...modalState,
       showModal: true,
       modalToShow: 'review',
-      reviewModalData: {...row},
+      reviewModalData: {...row, new_rating: 1},
     });
   };
 
   const changeBidDatePickerSelected = event => {
-    setState({
-      ...state,
-      bidModalData: {...state.bidModalData, booking_date: event.target.value},
+    setModalState({
+      ...modalState,
+      bidModalData: {
+        ...modalState.bidModalData,
+        booking_date: event.target.value,
+      },
     });
   };
 
-  const changeRatings = event => {
+  const getAvailableCaretakers = async () => {
+    const {start, end, pet} = state.form;
+
+    if (new Date(Date.parse(start)) > new Date(Date.parse(end))) {
+      createAlert('Start date cannot be greater than end date');
+      return;
+    }
+
+    if (pet === '') {
+      createAlert('Select a pet');
+      return;
+    }
+
+    const username = Cookies.get('petpals-username');
+    let availableCaretakers = [];
+
+    try {
+      // eslint-disable-next-line
+      availableCaretakers = await fetch(
+        `${backendHost}/caretakers/${username}/availability/${start}/${end}/${pet}`
+      )
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+    } catch (error) {
+      createAlert('Could not get availability');
+    }
+
     setState({
       ...state,
-      reviewModalData: {...reviewModalData, rating: event.target.value},
+      newBidsTable: {
+        columns: newBidsColumns,
+        data: availableCaretakers.results,
+        bidModalData: {
+          start: state.form.start,
+          end: state.form.end,
+          booking_date: state.form.start,
+        },
+      },
+      showBidsTable: true,
+    });
+  };
+
+  const fetchData = async () => {
+    const username = Cookies.get('petpals-username');
+    let confirmedBookings = [];
+
+    try {
+      const bookingsResponse = await fetch(
+        `${backendHost}/booking/owner/${username}`
+      )
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      confirmedBookings = bookingsResponse.results.filter(
+        booking => booking.status === 'ACCEPTED'
+      );
+      confirmedBookings.forEach(booking => {
+        // eslint-disable-next-line
+        booking.end_period = moment(booking.end_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+        // eslint-disable-next-line
+        booking.start_period = moment(booking.start_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+      });
+    } catch (error) {
+      createAlert('Could not fetch data');
+      return;
+    }
+
+    const pastBookings = confirmedBookings.filter(
+      booking => Date.parse(booking.end_period) < Date.parse(todayDate)
+    );
+    const upcomingBookings = confirmedBookings.filter(
+      booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
+    );
+
+    setState({
+      ...state,
+      pastBidsTable: {columns: pastColumns, data: pastBookings},
+      upcomingBidsTable: {columns: upcomingColumns, data: upcomingBookings},
+    });
+  };
+
+  const submitBooking = async () => {
+    const {
+      price,
+      username: caretaker,
+      booking_date: bookingDate,
+    } = modalState.bidModalData;
+    const {pet} = state.form;
+    const username = Cookies.get('petpals-username');
+
+    try {
+      await fetch(`${backendHost}/booking`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          owner: username,
+          pet_name: pet,
+          caretaker,
+          start_period: bookingDate,
+          end_period: bookingDate,
+          payment_method: 'Card',
+          delivery_method: 'Normal',
+          bid_rate: price,
+        }),
+      }).then(fetchStatusHandler);
+      await fetchData();
+      setModalState({
+        ...modalState,
+        showModal: false,
+        modalToShow: '',
+      });
+    } catch (error) {
+      createAlert('Failed to submit booking');
+    }
+  };
+
+  const submitRating = async () => {
+    const username = Cookies.get('petpals-username');
+    const {
+      caretaker,
+      new_rating: rating,
+      pet_name: petName,
+      start_period: date,
+    } = modalState.reviewModalData;
+
+    try {
+      await fetch(
+        `${backendHost}/booking/${username}/${petName}/${caretaker}/${date}/${date}`,
+        {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({rating}),
+        }
+      ).then(fetchStatusHandler);
+      await fetchData();
+      setModalState({
+        ...modalState,
+        showModal: false,
+        modalToShow: '',
+      });
+    } catch (error) {
+      createAlert('Failed to submit rating');
+    }
+  };
+
+  const changeRatings = event => {
+    setModalState({
+      ...modalState,
+      reviewModalData: {
+        ...modalState.reviewModalData,
+        new_rating: event.target.value,
+      },
     });
   };
 
   const bidModal =
-    state.modalToShow === 'bid' ? (
+    modalState.modalToShow === 'bid' ? (
       <Modal
-        show={state.showModal}
+        show={modalState.showModal}
         title="Make a new Bid"
         handleClose={handleModalClose}>
         <ModalBS.Body>
@@ -137,15 +279,15 @@ const BidsOwner = () => {
             type="date"
             id="bid-start"
             name="bid-start"
-            value={state.bidModalData.booking_date}
-            min={state.bidModalData.start_date.replaceAll('/', '-')}
-            max={state.bidModalData.end_date.replaceAll('/', '-')}
+            value={modalState.bidModalData.booking_date}
+            min={state.form.start}
+            max={state.form.end}
             onChange={changeBidDatePickerSelected}
           />
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}
-          <Button variant="secondary" onClick={() => {}}>
+          <Button variant="secondary" onClick={submitBooking}>
             Submit
           </Button>
         </ModalBS.Footer>
@@ -153,9 +295,9 @@ const BidsOwner = () => {
     ) : null;
 
   const reviewModalData =
-    state.modalToShow === 'review' ? (
+    modalState.modalToShow === 'review' ? (
       <Modal
-        show={state.showModal}
+        show={modalState.showModal}
         title="Leave a Review for this service"
         handleClose={handleModalClose}>
         <ModalBS.Body>
@@ -169,27 +311,94 @@ const BidsOwner = () => {
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}
-          <Button variant="secondary" onClick={() => {}}>
+          <Button variant="primary" onClick={submitRating}>
             Submit
           </Button>
         </ModalBS.Footer>
       </Modal>
     ) : null;
 
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line
+  }, []);
+
   return (
     <div>
-      <h3>Your current bids</h3>
+      <h3>Your Past bids</h3>
       <Table
         columns={state.pastBidsTable.columns}
         data={state.pastBidsTable.data}
       />
-      <h3>Past bids</h3>
-      <Table columns={[]} data={[]} />
-      <h3>Make new bids</h3>
+      <h3>Upcoming bids</h3>
       <Table
-        columns={state.newBidsTable.columns}
-        data={state.newBidsTable.data}
+        columns={state.upcomingBidsTable.columns}
+        data={state.upcomingBidsTable.data}
       />
+      <h3>Make new bids</h3>
+      <div>
+        <span className={style.margin_r12}>
+          Start Date:
+          <input
+            type="date"
+            id="form-start"
+            name="form-start"
+            value={state.form.start}
+            min={todayDate}
+            max={maxDate}
+            onChange={event =>
+              setState({
+                ...state,
+                form: {...state.form, start: event.target.value},
+              })
+            }
+          />
+        </span>
+        <span>
+          End:
+          <input
+            type="date"
+            id="form-end"
+            name="form-end"
+            value={state.form.end}
+            min={state.form.start}
+            max={maxDate}
+            onChange={event => {
+              setState({
+                ...state,
+                form: {...state.form, end: event.target.value},
+              });
+            }}
+          />
+        </span>
+      </div>
+      <div className={style.margin_8}>
+        <span>Pet Type: </span>
+        <select
+          name="pet"
+          onChange={event => {
+            setState({
+              ...state,
+              form: {...state.form, pet: event.target.value},
+            });
+          }}>
+          <option value="">Select a pet</option>
+          <option value="garfield">garfield</option>
+        </select>
+      </div>
+      <Button
+        variant="primary"
+        onClick={getAvailableCaretakers}
+        className={style.margin_12}>
+        Search for availability
+      </Button>
+      {state.showBidsTable ? (
+        <Table
+          className={style.margin_12}
+          columns={state.newBidsTable.columns}
+          data={state.newBidsTable.data}
+        />
+      ) : null}
       {bidModal}
       {reviewModalData}
     </div>

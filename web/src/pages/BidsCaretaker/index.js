@@ -1,47 +1,33 @@
 import React, {useState, useEffect} from 'react';
+import moment from 'moment';
+import 'moment-timezone';
 import {Button} from 'react-bootstrap';
+import Cookies from 'js-cookie';
 import Table from '../../components/Table';
+import {createAlert, backendHost, fetchStatusHandler} from '../../utils';
 
 const BidsCaretaker = () => {
+  const todayDate = moment().tz('Asia/Singapore').format('YYYY-MM-DD');
   const [state, setState] = useState({
     upcoming: {data: [], columns: []},
     pending: {data: [], columns: []},
   });
 
-  const upcomingData = [
-    {
-      username: 'a',
-      pet: 'b',
-      price: 1,
-      start_date: '2020/10/30',
-      end_date: '2020/10/30',
-    },
-    {
-      username: 'c',
-      pet: 'd',
-      price: 12,
-      start_date: '2020/10/31',
-      end_date: '2020/10/31',
-    },
-  ];
-
   const upcomingColumns = [
-    {Header: 'Caretaker', accessor: 'username'},
-    {Header: 'Pet Name', accessor: 'pet'},
-    {Header: 'Bid Price', accessor: 'price'},
-    {Header: 'Start Date', accessor: 'start_date'},
-    {Header: 'End Date', accessor: 'end_date'},
+    {Header: 'Owner', accessor: 'owner'},
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Bid Price', accessor: 'bid_rate'},
+    {Header: 'Job Date', accessor: 'start_period'},
   ];
 
   const pendingColumns = [
-    {Header: 'Caretaker', accessor: 'username'},
-    {Header: 'Pet Name', accessor: 'pet'},
-    {Header: 'Bid Price', accessor: 'price'},
-    {Header: 'Start Date', accessor: 'start_date'},
-    {Header: 'End Date', accessor: 'end_date'},
+    {Header: 'Owner', accessor: 'owner'},
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Bid Price', accessor: 'bid_rate'},
+    {Header: 'Job Date', accessor: 'start_period'},
     {
-      Header: 'Ratings',
-      id: 'rating',
+      Header: 'Action',
+      id: 'action',
       // eslint-disable-next-line
       Cell: ({row}) => {
         return (
@@ -58,28 +44,65 @@ const BidsCaretaker = () => {
     },
   ];
 
-  const pendingData = [
-    {
-      username: 'a',
-      pet: 'b',
-      price: 1,
-      start_date: '2020/10/10',
-      end_date: '2020/10/12',
-    },
-    {
-      username: 'c',
-      pet: 'd',
-      price: 12,
-      start_date: '2020/10/20',
-      end_date: '2020/10/22',
-    },
-  ];
+  const fetchData = async () => {
+    const username = Cookies.get('petpals-username');
+    let confirmedBookings = [];
+    let pendingBookings = [];
+
+    try {
+      const bookingsResponse = await fetch(
+        `${backendHost}/booking/caretaker/${username}`
+      )
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      confirmedBookings = bookingsResponse.results.filter(
+        booking => booking.status === 'ACCEPTED'
+      );
+      confirmedBookings.forEach(booking => {
+        // eslint-disable-next-line
+        booking.end_period = moment(booking.end_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+        // eslint-disable-next-line
+        booking.start_period = moment(booking.start_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+      });
+      // eslint-disable-next-line
+      pendingBookings = bookingsResponse.results.filter(
+        booking => booking.status === 'ACCEPTED'
+      );
+      pendingBookings.forEach(booking => {
+        // eslint-disable-next-line
+        booking.end_period = moment(booking.end_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+        // eslint-disable-next-line
+        booking.start_period = moment(booking.start_period)
+          .tz('Asia/Singapore')
+          .format('YYYY-MM-DD');
+      });
+    } catch (error) {
+      createAlert('Could not fetch data');
+    }
+    const upcomingBookings = confirmedBookings.filter(
+      booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
+    );
+    // eslint-disable-next-line
+    pendingBookings = pendingBookings.filter(
+      booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
+    );
+
+    setState({
+      ...state,
+      upcoming: {data: upcomingBookings, columns: upcomingColumns},
+      pending: {data: pendingBookings, columns: pendingColumns},
+    });
+  };
 
   useEffect(() => {
-    setState({
-      upcoming: {data: upcomingData, columns: upcomingColumns},
-      pending: {data: pendingData, columns: pendingColumns},
-    });
+    fetchData();
     // eslint-disable-next-line
   }, []);
 

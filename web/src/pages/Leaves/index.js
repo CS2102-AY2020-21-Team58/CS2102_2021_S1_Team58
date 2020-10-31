@@ -36,8 +36,7 @@ const Leaves = () => {
 
   const caretakerType = Cookies.get('caretaker-type');
   const userType = Cookies.get('petpals-userType');
-  const isFullTimer =
-    caretakerType === 'fulltime' || userType === 'Administrator';
+  const isFullTimer = caretakerType === 'fulltime';
   const unsupportedPetTypes = obj =>
     allPetTypes.filter(
       type => !Object.keys(obj).includes(type) || obj[type].length !== 2
