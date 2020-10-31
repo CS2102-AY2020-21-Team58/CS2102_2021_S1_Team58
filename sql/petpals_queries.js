@@ -230,7 +230,7 @@ sql.query = {
     FROM bookings B WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC LIMIT 5',
     //get caretakers in the same area
     get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
-    
+
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
     get_parttimer_salaries: 'SELECT SUM( \
@@ -687,6 +687,8 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
                             FROM bookings \
                             WHERE caretaker = $1 AND (DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', start_period) OR DATE_PART(\'month\',TIMESTAMP $2) = DATE_PART(\'month\', end_period)) AND DATE_PART(\'year\', TIMESTAMP $2) = DATE_PART(\'year\', start_period) AND status = ${STATUS_ACCEPTED}`,
 
+
+    search_caretaker_pet_type: 'SELECT caretaker, price FROM handles WHERE animal_name = $1',
 
     // search_caretaker: search for caretakers available during entire period,
     // with less than 2/4/5 pets every day (for part-time/part-time rated 4/full time),

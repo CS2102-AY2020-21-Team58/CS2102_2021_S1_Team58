@@ -29,7 +29,7 @@ module.exports.initRouter = function initRouter(app) {
     app.post("/:user/caretakers/services/:animal_name", add_caretaker_services);
     app.post('/reqpetservice/:petowner/:petname', add_pet_required_services);
 
-    // // GET Methods
+    // GET Methods
     app.get('/petsofowner/:username', get_pets_of_owner);
     app.get('/allservices/', get_all_services);
     app.get('/pendingbids/', get_pending_bids);
@@ -38,7 +38,8 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/sameareacaretaker/:location', get_same_area_caretaker);
     app.get('/booking', get_bookings);
     app.get('/booking/:user/:username', get_user_bookings);
-    app.get('/:user/owners/search/caretakers/:start_period/:end_period/:pet_name', get_available_caretakers);
+    app.get('/:user/owners/search/caretakers/:start_period/:end_period/:pet_name', get_matching_caretakers);
+    app.get('/:user/owners/search/caretakers/:animal_name', get_caretakers_by_pet_type);
     app.get('/:user/caretakers/leaves_availability', get_leave_or_availability);
     app.get('/:user/caretakers/services', get_caretaker_animals);
     app.get('/:user/caretakers/services/:animal_name', get_caretaker_services);
@@ -751,13 +752,38 @@ function delete_caretaker_services(req, res, next) {
 /**
  *
  * Provide the following in path:
+ * user: String, redundant field (meant for parallelism with get_matching_caretakers)
+ * animal_name: String, pet type from pet_types table
+ *
+ */
+function get_caretakers_by_pet_type(req, res, next) {
+    console.log(req);
+    const animal_name = req.params.animal_name;
+
+    pool
+        .query(queries.search_caretaker_pet_type, [animal_name])
+        .then((result) => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched caretakers for pet type!");
+        })
+        .catch((err) => {
+            res.status(404).json({
+                message: "Encountered problem finding caretakers for pet type.",
+                error: err,
+            });
+            console.log(err);
+        });
+}
+/**
+ *
+ * Provide the following in path:
  * start_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
  * end_period: String, Format: YYYY-MM-DD or DD/MM/YYYY
  * owner: String (owner username from pets table)
  * pet_name: String
  *
  */
-function get_available_caretakers(req, res, next) {
+function get_matching_caretakers(req, res, next) {
   console.log(req);
   const start_period = req.params.start_period;
   const end_period = req.params.end_period;
@@ -765,19 +791,14 @@ function get_available_caretakers(req, res, next) {
   const pet_name = req.params.pet_name;
 
   pool
-    .query(queries.search_caretaker, [
-      start_period,
-      end_period,
-      username,
-      pet_name,
-    ])
+    .query(queries.search_caretaker, [start_period, end_period, username, pet_name])
     .then((result) => {
       res.status(200).json({ results: result.rows });
-      console.log("Successfully fetched available caretakers!");
+      console.log("Successfully fetched matching caretakers!");
     })
     .catch((err) => {
       res.status(404).json({
-        message: "Encountered problem finding available caretakers.",
+        message: "Encountered problem finding matching caretakers.",
         error: err,
       });
       console.log(err);
