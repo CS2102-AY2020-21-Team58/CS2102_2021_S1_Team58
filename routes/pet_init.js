@@ -6,16 +6,12 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-	user: 'postgres',
-    password: 'mustafa786',
-    host: 'localhost',
-    database: 'petpals',
-    port: 5432
-    // user: process.env.DB_USER,
-    // password: process.env.DB_PASSWORD,
-    // host: process.env.DB_HOST,
-    // database: process.env.DB_NAME,
-    // port: process.env.DB_PORT,
+
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
 });
 
 module.exports.initRouter = function initRouter(app) {
@@ -77,7 +73,7 @@ function query(req, fld) {
  * petname: String, from pets table
  *
  * Provide the following in request body:
- * service: String, from services table
+ * service: String --> add multiple services (in services table) separated by a comma 
  *
  */
 function add_pet_required_services(req, res, next) {
@@ -87,13 +83,11 @@ function add_pet_required_services(req, res, next) {
     const pet_name = req.params.petname;
     const service = req.body.service;
     const list_services = service.split(",");
-    console.log(typeof service);
-    console.log(service.split(","));
-    console.log(service.split(",")[1]);
+
     pool.query(queries.check_if_pet_owner, [owner_name])
     .catch((err) => {
         res.status(404).json({
-          message: "Error: This is now a pet owner!",
+          message: "Error: This is not a pet owner!",
           error: err,
         });
         console.log(err);
