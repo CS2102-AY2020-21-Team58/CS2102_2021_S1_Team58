@@ -6,65 +6,75 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
 module.exports.initRouter = function initRouter(app) {
-    // Basic entry point for test.
-    app.get('/', (request, response) => {
-        response.json({ info: 'Pet Pals backend started.' })
-    });
+  // Basic entry point for test.
+  app.get("/", (request, response) => {
+    response.json({ info: "Pet Pals backend started." });
+  });
 
-    // POST Methods
-    app.post('/register', register_user);
-    app.post('/login', login);
-    app.post('/booking', create_bid);
-    app.post("/:user/caretakers/leaves_availability", add_leave_or_availability);
-    app.post("/:user/caretakers/services", add_caretaker_animals);
-    app.post("/:user/caretakers/services/:animal_name", add_caretaker_services);
-    app.post('/reqpetservice/:petowner/:petname', add_pet_required_services);
+  // POST Methods
+  app.post("/register", register_user);
+  app.post("/login", login);
+  app.post("/booking", create_bid);
+  app.post("/leaves_availability/:user", add_leave_or_availability);
+  app.post("/caretakers/:user/services", add_caretaker_animals);
+  app.post("/caretakers/:user/services/:animal_name", add_caretaker_services);
+  app.post("/reqpetservice/:petowner/:petname", add_pet_required_services);
 
-    // // GET Methods
-    app.get('/petsofowner/:username', get_pets_of_owner);
-    app.get('/allservices/', get_all_services);
-    app.get('/pendingbids/', get_pending_bids);
-    app.get('/monthmaxjobs/', get_month_of_max_jobs);
-    app.get('/jobsinmaxjobsmonth/', get_jobs_max_job_month);
-    app.get('/sameareacaretaker/:location', get_same_area_caretaker);
-    app.get('/booking', get_bookings);
-    app.get('/booking/:user/:username', get_user_bookings);
-    app.get('/:user/owners/search/caretakers/:start_period/:end_period/:pet_name', get_available_caretakers);
-    app.get('/:user/caretakers/leaves_availability', get_leave_or_availability);
-    app.get('/:user/caretakers/services', get_caretaker_animals);
-    app.get('/:user/caretakers/services/:animal_name', get_caretaker_services);
-    app.get('/salary_list/:date', get_all_salaries); //month must be month number, year must be year number
-    app.get('/salary_total/:date', get_total_salaries);
-    app.get('/revenue/:date', get_revenue);
-    app.get('/profit/:date', get_profit);
-    app.get('/salary/:usertype/:username/:date', get_user_salary);
-    app.get('/underperforming_caretakers/:date', get_bad_caretakers);
-    app.get('/top_ratings/:username', get_top_ratings);
-    app.get('/worst_ratings/:username', get_worst_ratings);
+  // // GET Methods
+  app.get("/petsofowner/:username", get_pets_of_owner);
+  app.get("/allservices/", get_all_services);
+  app.get("/pendingbids/", get_pending_bids);
+  app.get("/monthmaxjobs/", get_month_of_max_jobs);
+  app.get("/jobsinmaxjobsmonth/", get_jobs_max_job_month);
+  app.get("/sameareacaretaker/:location", get_same_area_caretaker);
+  app.get("/booking", get_bookings);
+  app.get("/booking/:user/:username", get_user_bookings);
+  app.get(
+    "/caretakers/:user/availability/:start_period/:end_period/:pet_name",
+    get_available_caretakers
+  );
+  app.get("/leaves_availability/:user", get_leave_or_availability);
+  app.get("/caretakers/:user/services", get_caretaker_animals);
+  app.get("/caretakers/:user/services/:animal_name", get_caretaker_services);
+  app.get("/salary_list/:date", get_all_salaries); //month must be month number, year must be year number
+  app.get("/salary_total/:date", get_total_salaries);
+  app.get("/revenue/:date", get_revenue);
+  app.get("/profit/:date", get_profit);
+  app.get("/salary/:usertype/:username/:date", get_user_salary);
+  app.get("/underperforming_caretakers/:date", get_bad_caretakers);
+  app.get("/top_ratings/:username", get_top_ratings);
+  app.get("/worst_ratings/:username", get_worst_ratings);
 
-    // UPDATE Methods
-    app.put('/booking/:owner/:pet_name/:caretaker/:start_period/:end_period', handlebooking);
-    app.put('/:user/caretakers/services', update_caretaker_animals);
+  // UPDATE Methods
+  app.put(
+    "/booking/:owner/:pet_name/:caretaker/:start_period/:end_period",
+    handlebooking
+  );
+  app.put("/caretakers/:user/services", update_caretaker_animals);
 
-    // DELETE Methods
-    app.delete('/:user/caretakers/leaves_availability', delete_leave_or_availability);
-    app.delete('/:user/caretakers/services', delete_caretaker_animals);
-    app.delete('/:user/caretakers/services/:animal_name', delete_caretaker_services);
-}
+  // DELETE Methods
+  app.delete(
+    "/caretakers/:user/leaves_availability",
+    delete_leave_or_availability
+  );
+  app.delete("/caretakers/:user/services", delete_caretaker_animals);
+  app.delete(
+    "/caretakers/:user/services/:animal_name",
+    delete_caretaker_services
+  );
+};
 
 function query(req, fld) {
-	return req.query[fld] ? req.query[fld] : '';
+  return req.query[fld] ? req.query[fld] : "";
 }
-
 
 /**
  *
@@ -73,28 +83,33 @@ function query(req, fld) {
  * petname: String, from pets table
  *
  * Provide the following in request body:
- * service: String --> add multiple services (in services table) separated by a comma 
+ * service: String --> add multiple services (in services table) separated by a comma
  *
  */
 function add_pet_required_services(req, res, next) {
-    console.log(req.params);
-    console.log(req.body);
-    const owner_name = req.params.petowner;
-    const pet_name = req.params.petname;
-    const service = req.body.service;
-    const list_services = service.split(",");
+  console.log(req.params);
+  console.log(req.body);
+  const owner_name = req.params.petowner;
+  const pet_name = req.params.petname;
+  const service = req.body.service;
+  const list_services = service.split(",");
 
-    pool.query(queries.check_if_pet_owner, [owner_name])
+  pool
+    .query(queries.check_if_pet_owner, [owner_name])
     .catch((err) => {
-        res.status(404).json({
-          message: "Error: This is not a pet owner!",
-          error: err,
-        });
-        console.log(err);
-      })
-    .then(()=> add_all_services(owner_name, pet_name, list_services))
+      res.status(404).json({
+        message: "Error: This is not a pet owner!",
+        error: err,
+      });
+      console.log(err);
+    })
+    .then(() => add_all_services(owner_name, pet_name, list_services))
     .then((result) => {
-      res.status(200).json({  message: "Successfully put services required for a pet of an owner!" });
+      res
+        .status(200)
+        .json({
+          message: "Successfully put services required for a pet of an owner!",
+        });
       console.log("Successfully added services for an owners pet!");
     })
     .catch((err) => {
@@ -104,140 +119,180 @@ function add_pet_required_services(req, res, next) {
       });
       console.log(err);
     });
-
 }
 
 function add_all_services(owner_name, pet_name, list_services) {
-    for(const eachservice of list_services) {
-        try {
-            pool.query(queries.add_service_pet, [owner_name, pet_name, eachservice])
-            // helper_add_pet_required_services(owner_name, pet_name, eachservice);
-        } catch (error) {
-            throw error;
-        }
+  for (const eachservice of list_services) {
+    try {
+      pool.query(queries.add_service_pet, [owner_name, pet_name, eachservice]);
+      // helper_add_pet_required_services(owner_name, pet_name, eachservice);
+    } catch (error) {
+      throw error;
     }
+  }
 }
 
 /**
- * 
+ *
  * Provide following in path:
  * owner_name: String --> Has to be an owner
- * 
+ *
  */
 function get_pets_of_owner(req, res, next) {
-    console.log(req.params);
-    const owner_name = req.params.username;
-    pool.query(queries.get_pet_owners_pets, [owner_name])
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully fetched pets with their services!");
+  console.log(req.params);
+  const owner_name = req.params.username;
+  pool
+    .query(queries.get_pet_owners_pets, [owner_name])
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully fetched pets with their services!");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems fetching pets of owners", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems fetching pets of owners",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide nothing;
- * 
+ *
  */
 function get_all_services(req, res, next) {
-    console.log(req.params);
-    pool.query(queries.get_all_services)
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully fetched services PetPals can provide");
+  console.log(req.params);
+  pool
+    .query(queries.get_all_services)
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully fetched services PetPals can provide");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems fetching services PetPals can provide", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems fetching services PetPals can provide",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide following in path:
  * owner_name: String --> Has to be an owner
- * 
+ *
  */
 function get_pending_bids(req, res, next) {
-    console.log(req.params);
-    const owner_name = req.params.username;
-    pool.query(queries.get_all_pending_pet_owners_bookings, [owner_name])
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully got bids of an Owner");
+  console.log(req.params);
+  const owner_name = req.params.username;
+  pool
+    .query(queries.get_all_pending_pet_owners_bookings, [owner_name])
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully got bids of an Owner");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems getting bids of an owner", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems getting bids of an owner",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide nothing;
- * 
+ *
  */
 function get_month_of_max_jobs(req, res, next) {
-    console.log(req.params);
-    pool.query(queries.get_month_where_max_pets_taken_care)
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully got month with max jobs");
+  console.log(req.params);
+  pool
+    .query(queries.get_month_where_max_pets_taken_care)
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully got month with max jobs");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems getting month with max jobs", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems getting month with max jobs",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide nothing;
- * 
+ *
  */
 function get_jobs_max_job_month(req, res, next) {
-    console.log(req.params);
-    pool.query(queries.get_jobs_number_during_month_with_max_jobs)
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully got jobs in month with max jobs");
+  console.log(req.params);
+  pool
+    .query(queries.get_jobs_number_during_month_with_max_jobs)
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully got jobs in month with max jobs");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems getting jobs in month with max jobs", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems getting jobs in month with max jobs",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
 
 /**
- * 
+ *
  * Provide following in path:
  * location area: String
- * 
+ *
  */
 function get_same_area_caretaker(req, res, next) {
-    console.log(req.params);
-    const location = req.params.location;
-    pool.query(queries.get_caretakers_same_area, [location])
-    .then(result => {
-        console.log(result);
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully got Cartakers in same area");
+  console.log(req.params);
+  const location = req.params.location;
+  pool
+    .query(queries.get_caretakers_same_area, [location])
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully got Cartakers in same area");
     })
-    .catch(err => {
-        res.status(404).json({ message: "Encountered problems getting caretakers in same area", error: err }).send(error);
-        console.log(err);
+    .catch((err) => {
+      res
+        .status(404)
+        .json({
+          message: "Encountered problems getting caretakers in same area",
+          error: err,
+        })
+        .send(error);
+      console.log(err);
     });
 }
-
 
 /**
  *
@@ -251,80 +306,23 @@ function get_same_area_caretaker(req, res, next) {
  *
  */
 function register_user(req, res, next) {
-    console.log(req.body);
-    const username = req.body.username;
-    const password = req.body.password;
-    const full_name = req.body.full_name;
-    const location = req.body.location;
-    const cardNumber = req.body.card;
-    let types = req.body.types;
-    types = types.map(t => t.toLowerCase());
+  console.log(req.body);
+  const username = req.body.username;
+  const password = req.body.password;
+  const full_name = req.body.full_name;
+  const location = req.body.location;
+  const cardNumber = req.body.card;
+  let types = req.body.types;
+  types = types.map((t) => t.toLowerCase());
 
-    if(types.includes("full-timer") && types.includes("part-timer")) {
-        res.status(400).json({ message: "Failed! Cannot be Part-timer and Full-timer at same time!" });
-        return;
-    }
-
-    const containsCaretaker = types.includes("full-timer") || types.includes("part-timer");
-
-    pool.query(queries.add_user, [username, password, full_name, location, cardNumber])
-        .catch(err => {
-            throw "Username already in use!";
-        })
-        .then(()=> {
-            if(containsCaretaker) {
-                pool.query(queries.add_care_taker, [username]);
-            }
-        })
-        .then(()=> add_all_roles(types, username))
-        .then(() => res.status(200).json({ message: "Successfully registered user!" }))
-        .catch(error => {
-            console.log(error);
-            if(error=="Username already in use!") {
-                res.status(400).json({ message: error });
-            } else {
-                cancel_registration(username);
-                res.status(400).json({ message: error });
-            }
-        });
-}
-
-function add_all_roles(roles, username) {
-    for(const r of roles) {
-        try {
-            add_role(r, username);
-        } catch (error) {
-            throw error;
-        }
-    }
-}
-
-function add_role(role, username) {
-    if(role.toLowerCase()=="administrator") {
-        pool.query(queries.add_admin, [username]);
-    } else if (role.toLowerCase()=="full-timer") { 
-        pool.query(queries.add_full_timer, [username]);
-    } else if (role.toLowerCase()=="part-timer") {
-        pool.query(queries.add_part_timer, [username]);
-    } else if (role.toLowerCase()=="owner") {
-        pool.query(queries.add_pet_owner, [username]);
-    } else {
-        throw "Incorrect user type! Registration aborted.";
-    }
-}
-
-function cancel_registration(username) {
-    pool.query(queries.delete_admin, [username])
-        .then(()=> pool.query(queries.delete_full_timer, [username]))
-        .then(()=> pool.query(queries.delete_part_timer, [username]))
-        .then(()=> pool.query(queries.delete_caretaker, [username]))
-        .then(()=> pool.query(queries.delete_owner, [username]))
-        .then(()=> pool.query(queries.delete_user, [username]))
-        .catch(error => {
-            console.log(error);
-            throw "Error encountered while registering user!";
-        });
-}
+  if (types.includes("full-timer") && types.includes("part-timer")) {
+    res
+      .status(400)
+      .json({
+        message: "Failed! Cannot be Part-timer and Full-timer at same time!",
+      });
+    return;
+  }
 
   const containsCaretaker =
     types.includes("full-timer") || types.includes("part-timer");
@@ -338,7 +336,6 @@ function cancel_registration(username) {
       cardNumber,
     ])
     .catch((err) => {
-      console.log("Username already in use!");
       throw "Username already in use!";
     })
     .then(() => {
@@ -346,7 +343,7 @@ function cancel_registration(username) {
         pool.query(queries.add_care_taker, [username]);
       }
     })
-    .then(() => types.map((type) => add_role(type, username)))
+    .then(() => add_all_roles(types, username))
     .then(() =>
       res.status(200).json({ message: "Successfully registered user!" })
     )
@@ -358,6 +355,44 @@ function cancel_registration(username) {
         cancel_registration(username);
         res.status(400).json({ message: error });
       }
+    });
+}
+
+function add_all_roles(roles, username) {
+  for (const r of roles) {
+    try {
+      add_role(r, username);
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+function add_role(role, username) {
+  if (role.toLowerCase() == "administrator") {
+    pool.query(queries.add_admin, [username]);
+  } else if (role.toLowerCase() == "full-timer") {
+    pool.query(queries.add_full_timer, [username]);
+  } else if (role.toLowerCase() == "part-timer") {
+    pool.query(queries.add_part_timer, [username]);
+  } else if (role.toLowerCase() == "owner") {
+    pool.query(queries.add_pet_owner, [username]);
+  } else {
+    throw "Incorrect user type! Registration aborted.";
+  }
+}
+
+function cancel_registration(username) {
+  pool
+    .query(queries.delete_admin, [username])
+    .then(() => pool.query(queries.delete_full_timer, [username]))
+    .then(() => pool.query(queries.delete_part_timer, [username]))
+    .then(() => pool.query(queries.delete_caretaker, [username]))
+    .then(() => pool.query(queries.delete_owner, [username]))
+    .then(() => pool.query(queries.delete_user, [username]))
+    .catch((error) => {
+      console.log(error);
+      throw "Error encountered while registering user!";
     });
 }
 
@@ -425,35 +460,36 @@ function login(req, res, next) {
 }
 
 async function get_roles(username) {
-    const roles = [];
+  const roles = [];
 
-    return pool.query(queries.check_if_pet_owner, [username])
-        .then(result => {
-            if(result.rowCount > 0) {
-                roles.push("Owner");
-            }
-        })
-        .then(() => pool.query(queries.check_if_admin, [username]))
-        .then(result => {
-            if(result.rowCount > 0) {
-                roles.push("Administrator");
-            }
-        })
-        .then(() => pool.query(queries.check_if_part_timer, [username]))
-        .then(result => {
-            if(result.rowCount > 0) {
-                roles.push("Part_Timer");
-            }
-        })
-        .then(() => pool.query(queries.check_if_full_timer, [username]))
-        .then(result => {
-            if(result.rowCount > 0) {
-                roles.push("Full_Timer");
-            }
-        })
-        .then(() => {
-            return Promise.resolve(roles);
+  return pool
+    .query(queries.check_if_pet_owner, [username])
+    .then((result) => {
+      if (result.rowCount > 0) {
+        roles.push("Owner");
+      }
     })
+    .then(() => pool.query(queries.check_if_admin, [username]))
+    .then((result) => {
+      if (result.rowCount > 0) {
+        roles.push("Administrator");
+      }
+    })
+    .then(() => pool.query(queries.check_if_part_timer, [username]))
+    .then((result) => {
+      if (result.rowCount > 0) {
+        roles.push("Part_Timer");
+      }
+    })
+    .then(() => pool.query(queries.check_if_full_timer, [username]))
+    .then((result) => {
+      if (result.rowCount > 0) {
+        roles.push("Full_Timer");
+      }
+    })
+    .then(() => {
+      return Promise.resolve(roles);
+    });
 }
 
 /**

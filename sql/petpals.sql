@@ -19,12 +19,38 @@ CREATE TABLE owners (
     username varchar(64) references users(username) PRIMARY KEY
 );
 
+CREATE OR REPLACE FUNCTION is_full_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM full_timers FT
+WHERE $1 = FT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION is_part_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM part_timers PT
+WHERE $1 = PT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE part_timers (
     username varchar(64) references caretakers(username) PRIMARY KEY
+    CHECK(is_full_timer(username)=0)
 );
 
 CREATE TABLE full_timers (
     username varchar(64) references caretakers(username) PRIMARY KEY
+    CHECK(is_part_timer(username)=0)
 );
 
 CREATE TABLE available_dates (
