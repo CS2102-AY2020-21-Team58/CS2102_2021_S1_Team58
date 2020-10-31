@@ -343,7 +343,7 @@ function get_caretaker_top_five_ratings(req, res, next) {
     const username = req.params.user;
 
     pool
-        .query(queries.get_top_five_ratings, [username])
+        .query(queries.get_top_five_ratings_verbose, [username])
         .then((result) => {
             res.status(200).json({ results: result.rows });
             console.log("Successfully fetched top ratings for caretaker!");
