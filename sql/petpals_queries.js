@@ -196,6 +196,13 @@ sql.query = {
     get_ratings_asc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating ASC',
     //retrieve all remarks + ratings of a caretaker in descending order
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
+    // get fields for advertisement
+    get_advertisement: 'SELECT * FROM ((SELECT average_rating FROM caretakers WHERE username = $1) JOIN \
+        (SELECT COUNT(*) AS total_rated_jobs FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL))',
+    //retrieve all remarks + ratings of a caretaker in descending order by date
+    get_ratings_desc_date: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY end_period DESC',
+
+
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'

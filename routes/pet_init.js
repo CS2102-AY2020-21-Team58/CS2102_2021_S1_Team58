@@ -34,6 +34,9 @@ module.exports.initRouter = function initRouter(app) {
     app.get('/:user/caretakers/leaves_availability', get_leave_or_availability);
     app.get('/:user/caretakers/services', get_caretaker_animals);
     app.get('/:user/caretakers/services/:animal_name', get_caretaker_services);
+    app.get('/:user/caretakers/advertisement', get_caretaker_advertisement);  //gets no. of (RATED) past jobs, av rating
+    app.get('/:user/caretakers/advertisement/ratings', get_caretaker_ratings); //shows all ratings
+    app.get('/:user/caretakers/advertisement/ratings/top5', get_caretaker_top_five_ratings);
     app.get('/salary_list/:date', get_all_salaries); //month must be month number, year must be year number
     app.get('/salary_total/:date', get_total_salaries);
     app.get('/revenue/:date', get_revenue);
@@ -278,8 +281,82 @@ function get_bookings(req, res, next) {
             console.log(err);
     });
 }
-    
-    
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ */
+function get_caretaker_advertisement(req, res, next) {
+    console.log(req);
+    const username = req.params.user;
+
+    pool
+        .query(queries.get_advertisement, [username])
+        .then((result) => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched advertisement for caretaker!");
+        })
+        .catch((err) => {
+            res.status(404).json({
+                message: "Encountered problem fetching advertisement for caretaker.",
+                error: err,
+            });
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ */
+function get_caretaker_ratings(req, res, next) {
+    console.log(req);
+    const username = req.params.user;
+
+    pool
+        .query(queries.get_ratings_desc_date, [username])
+        .then((result) => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched ratings for caretaker!");
+        })
+        .catch((err) => {
+            res.status(404).json({
+                message: "Encountered problem fetching ratings for caretaker.",
+                error: err,
+            });
+            console.log(err);
+        });
+}
+
+/**
+ *
+ * Provide the following in path:
+ * username: String
+ *
+ */
+function get_caretaker_top_five_ratings(req, res, next) {
+    console.log(req);
+    const username = req.params.user;
+
+    pool
+        .query(queries.get_top_five_ratings, [username])
+        .then((result) => {
+            res.status(200).json({ results: result.rows });
+            console.log("Successfully fetched top ratings for caretaker!");
+        })
+        .catch((err) => {
+            res.status(404).json({
+                message: "Encountered problem fetching top ratings for caretaker.",
+                error: err,
+            });
+            console.log(err);
+        });
+}
+
 /**
  * 
  * Provide the following in path:
