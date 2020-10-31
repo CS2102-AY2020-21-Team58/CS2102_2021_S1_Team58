@@ -65,7 +65,7 @@ sql.query = {
     //Insert a pet owner
     add_pet_owner: 'INSERT INTO owners (username) VALUES($1)',
     //Insert a care taker
-    add_care_taker: 'INSERT INTO caretakers (username, average_rating) VALUES($1, $2)',
+    add_care_taker: 'INSERT INTO caretakers (username) VALUES($1)',
     //Insert a part time caretaker
     add_part_timer: 'INSERT INTO part_timers (username) VALUES($1)',
     //Insert a full time care taker
@@ -89,7 +89,8 @@ sql.query = {
     //Add availability for part time care taker
     add_availability: 'INSERT INTO available_dates(username, start_period, end_period) VALUES ($1, $2, $3)',
     //Add a booking
-    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL )',
+    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, $10, $11 )',
+    add_initial_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, NULL, NULL)',
     
     //UPDATES
     //Add rating
@@ -151,15 +152,15 @@ sql.query = {
     //Check if given username is in users table. Returns 1 if true.
     check_if_username_exists: 'SELECT COUNT(*) FROM users WHERE username=$1',
     //Check if given username is a petowner. Returns 1 if true.
-    check_if_pet_owner: 'SELECT COUNT(*) FROM users WHERE username=$1',
+    check_if_pet_owner: 'SELECT 1 FROM users WHERE username=$1',
     //check if given username is admin. Returns 1 if true.
-    check_if_admin: 'SELECT COUNT(*) FROM administrator WHERE username=$1',
+    check_if_admin: 'SELECT 1 FROM administrator WHERE username=$1',
     //check if given username is caretaker. Returns 1 if true.
-    check_if_caretaker: 'SELECT COUNT(*) FROM caretakers WHERE username=$1',
+    check_if_caretaker: 'SELECT 1 FROM caretakers WHERE username=$1',
     //check if given username if part time care taker. Returns 1 if true.
-    check_if_part_timer: 'SELECT COUNT(*) FROM part_timers WHERE username=$1',
+    check_if_part_timer: 'SELECT 1 FROM part_timers WHERE username=$1',
     //check if given username is full time care taker. Returns 1 if true.
-    check_if_full_timer: 'SELECT COUNT(*) FROM full_timers WHERE username=$1',
+    check_if_full_timer: 'SELECT 1 FROM full_timers WHERE username=$1',
     //get number of bookings with review for a caretaker of given username
     get_num_of_reviews: 'SELECT COUNT(*) FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL',
     //get caretakers with avg review below a particular value
@@ -178,6 +179,8 @@ sql.query = {
     get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
     //get all services petpals can provide
     get_all_services: 'SELECT * FROM services',
+    // get all bookings 
+    get_all_bookings: 'SELECT * FROM bookings',
     //pet owner views all bookings
     get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
     //pet owner views all pending bookings
