@@ -811,15 +811,15 @@ function get_available_caretakers(req, res, next) {
  *
  */
 function add_leave_or_availability(req, res, next) {
-  console.log(req);
   const username = req.params.user;
   const start_period = req.body.start_period;
   const end_period = req.body.end_period;
+  console.log(req.body);
 
   pool
     .query(queries.check_if_part_timer, [username])
     .then((result) => {
-      if (result.rows[0].count == "1") {
+      if (result.rowCount === 1) {
         pool
           .query(queries.add_availability, [username, start_period, end_period])
           .then((result) => {
@@ -835,7 +835,7 @@ function add_leave_or_availability(req, res, next) {
           });
       } else {
         pool.query(queries.check_if_full_timer, [username]).then((result) => {
-          if (result.rows[0].count == "1") {
+          if (result.rowCount === 1) {
             pool
               .query(queries.add_leave, [username, start_period, end_period])
               .then((result) => {
@@ -1098,13 +1098,12 @@ function handlebooking(req, res, next) {
  *
  */
 function get_leave_or_availability(req, res, next) {
-  console.log(req);
   const username = req.params.user;
 
   pool
     .query(queries.check_if_part_timer, [username])
     .then((result) => {
-      if (result.rows[0].count == "1") {
+      if (result.rowCount === 1) {
         pool
           .query(queries.get_all_part_timer_availability, [username])
           .then((result) => {
@@ -1120,7 +1119,8 @@ function get_leave_or_availability(req, res, next) {
           });
       } else {
         pool.query(queries.check_if_full_timer, [username]).then((result) => {
-          if (result.rows[0].count == "1") {
+          console.log(result);
+          if (result.rowCount === 1) {
             pool
               .query(queries.get_all_full_timer_leaves, [username])
               .then((result) => {

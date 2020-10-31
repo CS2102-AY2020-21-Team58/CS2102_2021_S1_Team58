@@ -41,3 +41,15 @@ export const getUserType = type => {
     caretakerType,
   };
 };
+
+export function fetchStatusHandler(response) {
+  if (response.status === 200) {
+    return response;
+  }
+  throw new Error(response.statusText);
+}
+
+export function generateStartEnd(todayDate) {
+  const year = parseInt(todayDate.slice(0, 4), 10);
+  return {start: todayDate, end: `${year + 1}-12-31`};
+}
