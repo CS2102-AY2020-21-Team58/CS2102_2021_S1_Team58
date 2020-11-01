@@ -39,7 +39,7 @@ module.exports.initRouter = function initRouter(app) {
   app.get("/booking/:user/:username", get_user_bookings);
   app.get(
     "/caretakers/:user/availability/:start_period/:end_period/:pet_name",
-    get_available_caretakers
+    get_matching_caretakers
   ); // here, user refers to pet owner, not caretaker
   app.get("/leaves_availability/:user", get_leave_or_availability);
   app.get("/caretakers/:user/services", get_caretaker_animals);
