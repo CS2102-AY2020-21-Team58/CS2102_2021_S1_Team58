@@ -19,12 +19,38 @@ CREATE TABLE owners (
     username varchar(64) references users(username) PRIMARY KEY
 );
 
+CREATE OR REPLACE FUNCTION is_full_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM full_timers FT
+WHERE $1 = FT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION is_part_timer(varchar) RETURNS NUMERIC AS $$
+DECLARE ctx NUMERIC;
+BEGIN
+SELECT COUNT(*) INTO ctx FROM part_timers PT
+WHERE $1 = PT.username;
+IF ctx > 0 THEN
+RETURN 1;
+ELSE
+RETURN 0;
+END IF; END; 
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE part_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
+    CHECK(is_full_timer(username)=0)
 );
 
 CREATE TABLE full_timers (
-    username varchar(64) references caretakers(username) PRIMARY KEY
+    username varchar(64) references caretakers(username) PRIMARY KEY,
+    CHECK(is_part_timer(username)=0)
 );
 
 CREATE TABLE available_dates (
@@ -233,7 +259,7 @@ CREATE OR REPLACE FUNCTION decline_clashing() RETURNS trigger AS $ret$
                     FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
                     WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
         ELSE
-            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status=PENDING" AND
+            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status" = 'PENDING' AND
                 caretaker=NEW.caretaker AND
                 EXISTS (SELECT 1
                     FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates

@@ -37,6 +37,24 @@ sql.query = {
     ORDER BY jobs \
     DESC LIMIT 1;',
 
+    get_jobs_number_during_month_with_max_jobs: '\
+    SELECT MAX(c1+c2+c3) \
+    FROM (SELECT * \
+            FROM (SELECT COUNT(*) AS c1, DATE_PART(\'month\', b1.start_period) AS month1 \
+                    FROM bookings b1 GROUP BY DATE_PART(\'month\', b1.start_period)) AS t1 FULL OUTER JOIN \
+                        (SELECT COUNT(*) AS c2, DATE_PART(\'month\', b1.end_period) AS month2 \
+                            FROM bookings b1 \
+                            WHERE DATE_PART(\'month\', b1.start_period) <> DATE_PART(\'month\', b1.end_period) \
+                            GROUP BY DATE_PART(\'month\', b1.end_period)) AS t2 \
+                    ON t1.month1 = t2.month2 FULL OUTER JOIN \
+                    (SELECT COUNT(*) AS c3, DATE_PART(\'month\', month) AS month3 \
+                        FROM (SELECT generate_series(date_trunc(\'month\',  start_period), end_period, \'1 month\')::date as month \
+                                FROM bookings \
+                                WHERE  DATE_PART(\'month\', end_period) - DATE_PART(\'month\', start_period) > 1) as temp \
+                                GROUP BY DATE_PART(\'month\', month)) AS t3 \
+                    ON t2.month2 = t3.month3) as ans \
+    WHERE month1 = month2 AND month2 = month3',
+
     //LOGIN: returns 1 if username-password combination exists. Get all details
     check_login_details: 'SELECT 1 FROM users WHERE username=$1 AND password=$2',
     get_user_details: 'SELECT * FROM users WHERE username=$1',
@@ -47,7 +65,7 @@ sql.query = {
     //Insert a pet owner
     add_pet_owner: 'INSERT INTO owners (username) VALUES($1)',
     //Insert a care taker
-    add_care_taker: 'INSERT INTO caretakers (username, average_rating) VALUES($1, $2)',
+    add_care_taker: 'INSERT INTO caretakers (username) VALUES($1)',
     //Insert a part time caretaker
     add_part_timer: 'INSERT INTO part_timers (username) VALUES($1)',
     //Insert a full time care taker
@@ -71,7 +89,8 @@ sql.query = {
     //Add availability for part time care taker
     add_availability: 'INSERT INTO available_dates(username, start_period, end_period) VALUES ($1, $2, $3)',
     //Add a booking
-    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL )',
+    add_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, $10, $11 )',
+    add_initial_booking: 'INSERT INTO bookings(owner, pet_name, caretaker, start_period, end_period, payment_method, delivery_method, status, bid_rate, rating, remarks) VALUES ($1, $2, $3, $4::timestamp, $5::timestamp, $6, $7, $8, $9, NULL, NULL)',
     
     //UPDATES
     //Add rating
@@ -133,15 +152,15 @@ sql.query = {
     //Check if given username is in users table. Returns 1 if true.
     check_if_username_exists: 'SELECT COUNT(*) FROM users WHERE username=$1',
     //Check if given username is a petowner. Returns 1 if true.
-    check_if_pet_owner: 'SELECT COUNT(*) FROM users WHERE username=$1',
+    check_if_pet_owner: 'SELECT 1 FROM users WHERE username=$1',
     //check if given username is admin. Returns 1 if true.
-    check_if_admin: 'SELECT COUNT(*) FROM administrator WHERE username=$1',
+    check_if_admin: 'SELECT 1 FROM administrator WHERE username=$1',
     //check if given username is caretaker. Returns 1 if true.
-    check_if_caretaker: 'SELECT COUNT(*) FROM caretakers WHERE username=$1',
+    check_if_caretaker: 'SELECT 1 FROM caretakers WHERE username=$1',
     //check if given username if part time care taker. Returns 1 if true.
-    check_if_part_timer: 'SELECT COUNT(*) FROM part_timers WHERE username=$1',
+    check_if_part_timer: 'SELECT 1 FROM part_timers WHERE username=$1',
     //check if given username is full time care taker. Returns 1 if true.
-    check_if_full_timer: 'SELECT COUNT(*) FROM full_timers WHERE username=$1',
+    check_if_full_timer: 'SELECT 1 FROM full_timers WHERE username=$1',
     //get number of bookings with review for a caretaker of given username
     get_num_of_reviews: 'SELECT COUNT(*) FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL',
     //get caretakers with avg review below a particular value
@@ -158,6 +177,10 @@ sql.query = {
     get_pet_owners_pets: 'SELECT * FROM pets WHERE owner = $1',
     //Get all services of a pet
     get_services_of_a_pet: 'SELECT * FROM requires WHERE owner = $1 AND pet_name = $2',
+    //get all services petpals can provide
+    get_all_services: 'SELECT * FROM services',
+    // get all bookings 
+    get_all_bookings: 'SELECT * FROM bookings',
     //pet owner views all bookings
     get_all_pet_owners_bookings: 'SELECT * FROM bookings WHERE owner = $1',
     //pet owner views all pending bookings
@@ -194,6 +217,8 @@ sql.query = {
     get_ratings_asc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating ASC',
     //retrieve all remarks + ratings of a caretaker in descending order
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
+    //get caretakers in the same area
+    get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
