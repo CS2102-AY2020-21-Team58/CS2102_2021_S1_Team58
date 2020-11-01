@@ -9,6 +9,7 @@ import BidsCaretaker from '../../pages/BidsCaretaker';
 import Leaves from '../../pages/Leaves';
 import PetsPage from '../../pages/Pets';
 import Salary from '../../pages/Salary';
+import Logout from '../../pages/Logout';
 import style from './Page.module.css';
 
 const Page = () => {
@@ -28,6 +29,7 @@ const Page = () => {
           <Route exact path="/pets" component={PetsPage} />
           <Route exact path="/leaves" component={Leaves} />
           <Route exact path="/salary" component={Salary} />
+          <Route exact path="/logout" component={Logout} />
         </Switch>
       </div>
     </div>
