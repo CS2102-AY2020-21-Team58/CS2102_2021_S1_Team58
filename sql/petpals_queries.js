@@ -146,7 +146,7 @@ sql.query = {
     //delete availability
     delete_availability: 'DELETE FROM available_dates WHERE username = $1 AND start_period = $2 AND end_period = $3',
     //delete booking
-    delete_booking: 'DELETE FROM bookings WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4 AND end_period = $5',
+    delete_booking: 'DELETE FROM bookings WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4::timestamp AND end_period = $5::timestamp',
 
     //BASIC QUERIES
     //Check if given username is in users table. Returns 1 if true.

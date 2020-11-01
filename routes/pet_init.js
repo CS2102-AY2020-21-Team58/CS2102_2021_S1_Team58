@@ -70,10 +70,28 @@ module.exports.initRouter = function initRouter(app) {
     "/caretakers/:user/services/:animal_name",
     delete_caretaker_services
   );
+  app.delete("/booking/:owner/:pet_name/:caretaker/:start_period/:end_period", delete_booking);
 };
 
 function query(req, fld) {
   return req.query[fld] ? req.query[fld] : "";
+}
+
+function delete_booking(req, res, next) {
+  const owner = req.params.owner;
+  const pet_name = req.params.pet_name;
+  const caretaker = req.params.caretaker;
+  const start_period = req.params.start_period;
+  const end_period = req.params.end_period;
+
+  console.log(req.params);
+
+  pool.query(queries.delete_booking, [owner, pet_name, caretaker, start_period, end_period])
+      .then(result => {
+        console.log("deleted booking");
+        res.status(200).json({ message: "Deleted booking."});
+      }) 
+      .catch(error => res.status(400).json({ message: "Error deleting booking.", error }));
 }
 
 /**
