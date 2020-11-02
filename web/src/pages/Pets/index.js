@@ -1,44 +1,87 @@
 import React, {useState, useEffect} from 'react';
 import {Button, Form} from 'react-bootstrap';
+import Cookies from 'js-cookie';
 import {useForm} from 'react-hook-form';
 import {FormCustom} from '../../components/FormCustom';
 import Table from '../../components/Table';
 import style from './Pets.module.css';
+import {
+  backendHost,
+  fetchStatusHandler,
+  createAlert,
+  allPetServices,
+  allPetTypes,
+} from '../../utils';
 
 const PetsPage = () => {
   const [state, setState] = useState({
-    petsData: [],
-    petsColumn: [],
+    petsData: {data: [], columns: []},
   });
 
   const {register, handleSubmit, reset} = useForm();
+  const petsColumns = [
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Pet Type', accessor: 'type'},
+  ];
 
   useEffect(() => {
-    setState({
-      ...state,
-      petsData: [
-        {username: 'blah', name: 'golden', type: 'dog'},
-        {username: 'fdjvn', name: 'fdjnf', type: 'bat'},
-      ],
-      petsColumn: [
-        {Header: 'Owner Name', accessor: 'username'},
-        {Header: 'Pet Name', accessor: 'name'},
-        {Header: 'Pet Type', accessor: 'type'},
-      ],
-    });
+    fetchData();
     // eslint-disable-next-line
   }, []);
+
+  const fetchData = async () => {
+    const username = Cookies.get('petpals-username');
+    let pets = [];
+
+    try {
+      const petsResponse = await fetch(`${backendHost}/owner/${username}/pets`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      pets = petsResponse.results;
+    } catch (error) {
+      createAlert('Failed to fetch pets');
+    }
+
+    setState({...state, petsData: {data: pets, columns: petsColumns}});
+  };
+
+  const submitPet = async data => {
+    const owner = Cookies.get('petpals-username');
+
+    try {
+      await fetch(`${backendHost}/owner/${owner}/pet`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pet_name: data.petName, type: data.type}),
+      }).then(fetchStatusHandler);
+    } catch (error) {
+      createAlert('Failed to create pet');
+      return;
+    }
+
+    try {
+      await fetch(`${backendHost}/owner/${owner}/pets/services`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pet_name: data.petName, services: data.services}),
+      }).then(fetchStatusHandler);
+      await fetchData();
+    } catch (error) {
+      createAlert(
+        'Failed to add pet services to pet. Use the edit function to try again'
+      );
+    }
+    reset();
+  };
 
   return (
     <div>
       <h3>Current Pets</h3>
-      <Table data={state.petsData} columns={state.petsColumn} />
+      <Table data={state.petsData.data} columns={state.petsData.columns} />
 
       <h3>Add a pet</h3>
-      <FormCustom
-        onSubmit={handleSubmit(() => {
-          reset();
-        })}>
+      <FormCustom onSubmit={handleSubmit(submitPet)}>
         <Form.Group>
           <Form.Label>Pet Name</Form.Label>
           <Form.Control
@@ -55,17 +98,35 @@ const PetsPage = () => {
 
         <Form.Group>
           <Form.Label>Select Pet Type</Form.Label>
-          <Form.Control as="select" name="userType" ref={register} required>
-            <option>Dog</option>
-            <option>Rat</option>
+          <Form.Control as="select" name="type" ref={register} required>
+            {allPetTypes.map((type, key) => (
+              // eslint-disable-next-line
+              <option value={type} key={key}>
+                {type}
+              </option>
+            ))}
           </Form.Control>
-          <Button
-            variant="primary"
-            type="submit"
-            className={style.submit_button}>
-            Submit
-          </Button>
         </Form.Group>
+
+        <Form.Group>
+          <Form.Label>Select Services Required</Form.Label>
+          <Form.Control
+            as="select"
+            name="services"
+            ref={register}
+            multiple
+            required>
+            {allPetServices.map((service, key) => (
+              // eslint-disable-next-line
+              <option value={service} key={key}>
+                {service}
+              </option>
+            ))}
+          </Form.Control>
+        </Form.Group>
+        <Button variant="primary" type="submit" className={style.submit_button}>
+          Submit
+        </Button>
       </FormCustom>
     </div>
   );

@@ -152,7 +152,7 @@ sql.query = {
     //Check if given username is in users table. Returns 1 if true.
     check_if_username_exists: 'SELECT COUNT(*) FROM users WHERE username=$1',
     //Check if given username is a petowner. Returns 1 if true.
-    check_if_pet_owner: 'SELECT 1 FROM users WHERE username=$1',
+    check_if_pet_owner: 'SELECT 1 FROM owners WHERE username=$1',
     //check if given username is admin. Returns 1 if true.
     check_if_admin: 'SELECT 1 FROM administrator WHERE username=$1',
     //check if given username is caretaker. Returns 1 if true.

@@ -35,7 +35,6 @@ const Leaves = () => {
   ];
 
   const caretakerType = Cookies.get('caretaker-type');
-  const userType = Cookies.get('petpals-userType');
   const isFullTimer = caretakerType === 'fulltime';
   const unsupportedPetTypes = obj =>
     allPetTypes.filter(
@@ -68,7 +67,6 @@ const Leaves = () => {
   };
 
   const submitNewPet = async data => {
-    console.log(data);
     const username = Cookies.get('petpals-username');
     if (data.price !== undefined) {
       try {
