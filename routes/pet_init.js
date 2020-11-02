@@ -6,10 +6,10 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  user: "me", //process.env.DB_USER,
+  password: "password", //process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
+  database: "petpals_real", // process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
 
@@ -55,6 +55,7 @@ module.exports.initRouter = function initRouter(app) {
   app.get("/worst_ratings/:username", get_worst_ratings);
   app.get("/pets/month", getPetsTakenCareInMonth);
   app.get("/caretakers/:username/pet_days/:date", getPetDaysInMonth);
+  app.get("/baserates", getBaseRates);
 
   // UPDATE Methods
   app.put(
@@ -62,6 +63,7 @@ module.exports.initRouter = function initRouter(app) {
     handlebooking
   );
   app.put("/caretakers/:user/services", update_caretaker_animals);
+  app.put("/baserates/:animal/:rate", updateBaseRates);
 
   // DELETE Methods
   app.delete(
@@ -1388,3 +1390,47 @@ function get_worst_ratings(req, res, next) {
       console.log(err);
     });
 }
+
+function getBaseRates(req, res, next) {
+    console.log(req.params);
+    let query = queries.get_base_rates;
+    pool
+      .query(query)
+      .then((result) => {
+        res.status(200).json({ results: result.rows });
+      })
+      .catch((err) => {
+        res.status(404).json({
+          message: "Encountered problem fetching base rates.",
+          error: err,
+        });
+        console.log(err);
+      });
+  }
+
+  /**
+ *
+ * Provide the following in path:
+ * Animal name: String
+ * rate: Int, new rate
+ *
+ */
+function updateBaseRates(req, res, next) {
+    console.log(req);
+    const animal = req.params.animal;
+    const rate = req.params.rate;
+  
+    pool
+      .query(queries.update_base_price, [animal, rate])
+      .then((result) => {
+        res.status(200).json({ results: result.rows });
+        console.log("Successfully updated price for caretaker!");
+      })
+      .catch((err) => {
+        res.status(404).json({
+          message: "Encountered problem updating base price.",
+          error: err,
+        });
+        console.log(err);
+      });
+  }
