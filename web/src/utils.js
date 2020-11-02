@@ -12,7 +12,7 @@ export const createAlert = message => {
 /* eslint-disable fp/no-mutation */
 export const getUserType = type => {
   const isBoth =
-    (type.indexOf('Part-Timer') !== -1 || type.indexOf('Part-Timer') !== -1) &&
+    (type.indexOf('Part_Timer') !== -1 || type.indexOf('Part_Timer') !== -1) &&
     type.indexOf('Owner') !== -1;
   const isAdmin = type.indexOf('Administrator') !== -1;
   const isPart = type.indexOf('Part_Timer') !== -1;
