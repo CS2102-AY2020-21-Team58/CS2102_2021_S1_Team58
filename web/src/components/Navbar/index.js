@@ -77,17 +77,26 @@ const Navbar = props => {
       </Nav>
       <Nav className={`mr-auto ${style.nav_flex}`}>
         {isLoggedIn && userType === 'Administrator' ? (
-          <Link to="/salary">
-            <NavbarBS.Text className={style.nav_links}>Salary</NavbarBS.Text>
+          <Link to="/admin">
+            <NavbarBS.Text className={style.nav_links}>
+              Administration
+            </NavbarBS.Text>
+          </Link>
+        ) : null}
+      </Nav>
+      <Nav className={`mr-auto ${style.nav_flex}`}>
+        {isLoggedIn &&
+        (userType === 'Caretaker' ||
+          userType === 'Both' ||
+          userType === 'Administrator') ? (
+          <Link to="/caretaker">
+            <NavbarBS.Text className={style.nav_links}>Caretaker</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
       {isLoggedIn ? (
         <NavbarBS.Collapse className="justify-content-end">
           <>
-            <NavbarBS.Text className={style.nav_links}>
-              User Type: {userType}
-            </NavbarBS.Text>
             <Link to="/logout">
               <NavbarBS.Text>Logout</NavbarBS.Text>
             </Link>

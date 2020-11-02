@@ -49,10 +49,12 @@ module.exports.initRouter = function initRouter(app) {
   app.get("/salary_total/:date", get_total_salaries);
   app.get("/revenue/:date", get_revenue);
   app.get("/profit/:date", get_profit);
-  app.get("/salary/:usertype/:username/:date", get_user_salary);
+  app.get("/salary/:username/:date", get_user_salary);
   app.get("/underperforming_caretakers/:date", get_bad_caretakers);
   app.get("/top_ratings/:username", get_top_ratings);
   app.get("/worst_ratings/:username", get_worst_ratings);
+  app.get("/pets/month", getPetsTakenCareInMonth);
+  app.get("/caretakers/:username/pet_days/:date", getPetDaysInMonth);
 
   // UPDATE Methods
   app.put(
@@ -71,7 +73,10 @@ module.exports.initRouter = function initRouter(app) {
     "/caretakers/:user/services/:animal_name",
     delete_caretaker_services
   );
-  app.delete("/booking/:owner/:pet_name/:caretaker/:start_period/:end_period", delete_booking);
+  app.delete(
+    "/booking/:owner/:pet_name/:caretaker/:start_period/:end_period",
+    delete_booking
+  );
 };
 
 function query(req, fld) {
@@ -87,12 +92,21 @@ function delete_booking(req, res, next) {
 
   console.log(req.params);
 
-  pool.query(queries.delete_booking, [owner, pet_name, caretaker, start_period, end_period])
-      .then(() => {
-        console.log("deleted booking");
-        res.status(200).json({ message: "Deleted booking."});
-      }) 
-      .catch(error => res.status(400).json({ message: "Error deleting booking.", error }));
+  pool
+    .query(queries.delete_booking, [
+      owner,
+      pet_name,
+      caretaker,
+      start_period,
+      end_period,
+    ])
+    .then(() => {
+      console.log("deleted booking");
+      res.status(200).json({ message: "Deleted booking." });
+    })
+    .catch((error) =>
+      res.status(400).json({ message: "Error deleting booking.", error })
+    );
 }
 
 async function addPet(req, res) {
@@ -242,6 +256,35 @@ function get_pending_bids(req, res, next) {
         .send(error);
       console.log(err);
     });
+}
+
+async function getPetsTakenCareInMonth(req, res) {
+  // This should be an integer
+  const { month } = req.query;
+
+  try {
+    const results = await pool.query(queries.pets_taken_care_in_month, [
+      parseInt(month, 10),
+    ]);
+    res.status(200).json({ results: results.rows });
+  } catch (error) {
+    res.status(400).json({ error });
+  }
+}
+
+async function getPetDaysInMonth(req, res) {
+  const { date, username } = req.params;
+
+  try {
+    const results = await pool.query(queries.pet_days_for_month, [
+      username,
+      date,
+    ]);
+    res.status(200).json({ results: results.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ error });
+  }
 }
 
 /**
@@ -1265,9 +1308,9 @@ function get_profit(req, res, next) {
 function get_user_salary(req, res, next) {
   console.log(req.params);
   const date = "'" + req.params.date + "'";
-  const usertype = req.params.usertype;
   const username = req.params.username;
-  if (usertype == "Part_Timer") {
+  const usertype = req.query.usertype;
+  if (usertype == "parttimer") {
     query = queries.get_parttimer_salaries;
   } else {
     query = queries.get_fulltimer_salaries;
