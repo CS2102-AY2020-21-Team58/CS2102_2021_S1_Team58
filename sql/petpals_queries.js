@@ -219,6 +219,8 @@ sql.query = {
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
     //get caretakers in the same area
     get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
+    //get base rates
+    get_base_rates: 'SELECT * FROM pet_types',
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
