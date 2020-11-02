@@ -236,6 +236,8 @@ const Leaves = () => {
         className={style.leaves_button}>
         {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
       </Button>
+      <br />
+      <br />
       <h3 className={style.pet_types}>Pet Types and Services Supported</h3>
       {Object.entries(state.supported)
         .map(([pet, petServices]) => `${pet}: ${petServices.join(',')}`)

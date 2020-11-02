@@ -15,8 +15,8 @@ export const getUserType = type => {
     (type.indexOf('Part-Timer') !== -1 || type.indexOf('Part-Timer') !== -1) &&
     type.indexOf('Owner') !== -1;
   const isAdmin = type.indexOf('Administrator') !== -1;
-  const isPart = type.indexOf('Part-Timer') !== -1;
-  const isFull = type.indexOf('Full-Timer') !== -1;
+  const isPart = type.indexOf('Part_Timer') !== -1;
+  const isFull = type.indexOf('Full_Timer') !== -1;
   const isCaretaker = isPart || isFull;
   let userType = '';
   if (isAdmin) {
