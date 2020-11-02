@@ -65,7 +65,6 @@ const BidsCaretaker = () => {
       ).then(fetchStatusHandler);
       await fetchData();
     } catch (error) {
-      console.log(error);
       createAlert('Failed to submit action');
     }
   };

@@ -26,15 +26,16 @@ module.exports.initRouter = function initRouter(app) {
   app.post("/leaves_availability/:user", add_leave_or_availability);
   app.post("/caretakers/:user/services", add_caretaker_animals);
   app.post("/caretakers/:user/services/:animal_name", add_caretaker_services);
-  app.post("/reqpetservice/:petowner/:petname", add_pet_required_services);
+  app.post("/owner/:owner/pets/services", add_pet_required_services);
+  app.post("/owner/:owner/pet/", addPet);
 
   // // GET Methods
-  app.get("/petsofowner/:username", get_pets_of_owner);
+  app.get("/owner/:username/pets", get_pets_of_owner);
   app.get("/allservices/", get_all_services);
   app.get("/pendingbids/", get_pending_bids);
   app.get("/monthmaxjobs/", get_month_of_max_jobs);
   app.get("/jobsinmaxjobsmonth/", get_jobs_max_job_month);
-  app.get("/sameareacaretaker/:location", get_same_area_caretaker);
+  app.get("/caretaker/location/:location", get_same_area_caretaker);
   app.get("/booking", get_bookings);
   app.get("/booking/:user/:username", get_user_bookings);
   app.get(
@@ -87,11 +88,25 @@ function delete_booking(req, res, next) {
   console.log(req.params);
 
   pool.query(queries.delete_booking, [owner, pet_name, caretaker, start_period, end_period])
-      .then(result => {
+      .then(() => {
         console.log("deleted booking");
         res.status(200).json({ message: "Deleted booking."});
       }) 
       .catch(error => res.status(400).json({ message: "Error deleting booking.", error }));
+}
+
+async function addPet(req, res) {
+  const { owner } = req.params;
+  const { pet_name, type } = req.body;
+
+  try {
+    await pool.query(queries.add_pet, [pet_name, type, owner]);
+  } catch (error) {
+    res.status(400).json({ error });
+    return;
+  }
+
+  res.sendStatus(200);
 }
 
 /**
@@ -105,12 +120,11 @@ function delete_booking(req, res, next) {
  *
  */
 function add_pet_required_services(req, res, next) {
-  console.log(req.params);
+  const owner_name = req.params.owner;
+  const pet_name = req.body.pet_name;
+  const services = req.body.services;
+
   console.log(req.body);
-  const owner_name = req.params.petowner;
-  const pet_name = req.params.petname;
-  const service = req.body.service;
-  const list_services = service.split(",");
 
   pool
     .query(queries.check_if_pet_owner, [owner_name])
@@ -121,8 +135,8 @@ function add_pet_required_services(req, res, next) {
       });
       console.log(err);
     })
-    .then(() => add_all_services(owner_name, pet_name, list_services))
-    .then((result) => {
+    .then(() => add_all_services(owner_name, pet_name, services))
+    .then(() => {
       res.status(200).json({
         message: "Successfully put services required for a pet of an owner!",
       });
@@ -980,7 +994,6 @@ function reply_booking(req, res, next) {
   const { owner, pet_name, caretaker, start_period, end_period } = req.params;
   const decision = req.body.decision;
   const query = decision ? queries.accept_booking : queries.decline_booking;
-  console.log(req.params);
 
   pool
     .query(query, [owner, pet_name, caretaker, start_period, end_period])
@@ -1108,7 +1121,7 @@ function rate_booking(req, res, next) {
 function handlebooking(req, res, next) {
   if (req.body["rating"] || req.body["review"]) {
     rate_booking(req, res, next);
-  } else if (req.body["decision"]) {
+  } else if (req.body["decision"] !== undefined) {
     reply_booking(req, res, next);
   } else {
     res.status(404).json({ message: "Encountered problem updating booking." });

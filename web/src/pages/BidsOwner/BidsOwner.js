@@ -23,6 +23,7 @@ const BidsOwner = () => {
     pastBidsTable: {columns: [], data: []},
     showBidsTable: false,
     form: {start: todayDate, end: todayDate, pet: ''},
+    pets: [],
   });
   const [modalState, setModalState] = useState({
     modalToShow: '',
@@ -177,7 +178,6 @@ const BidsOwner = () => {
       });
     } catch (error) {
       createAlert('Could not fetch data');
-      return;
     }
 
     const pastBookings = confirmedBookings.filter(
@@ -187,10 +187,22 @@ const BidsOwner = () => {
       booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
     );
 
+    let pets = [];
+    try {
+      const petsResponse = await fetch(`${backendHost}/owner/${username}/pets`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      pets = [...new Set(petsResponse.results.map(pet => pet.pet_name))];
+    } catch (error) {
+      createAlert('Failed to fetch pets');
+    }
+
     setState({
       ...state,
       pastBidsTable: {columns: pastColumns, data: pastBookings},
       upcomingBidsTable: {columns: upcomingColumns, data: upcomingBookings},
+      pets,
     });
   };
 
@@ -373,7 +385,7 @@ const BidsOwner = () => {
         </span>
       </div>
       <div className={style.margin_8}>
-        <span>Pet Type: </span>
+        <span>Pet: </span>
         <select
           name="pet"
           onChange={event => {
@@ -383,15 +395,19 @@ const BidsOwner = () => {
             });
           }}>
           <option value="">Select a pet</option>
-          <option value="garfield">garfield</option>
-          <option value="lion">lion</option>
+          {state.pets.map((type, key) => (
+            <option value={type}>{type}</option>
+          ))}
         </select>
       </div>
       <Button
         variant="primary"
         onClick={getAvailableCaretakers}
-        className={style.margin_12}>
-        Search for availability
+        className={style.margin_12}
+        disabled={state.pets.length === 0}>
+        {state.pets.length === 0
+          ? 'Add a pet first'
+          : 'Search for availability'}
       </Button>
       {state.showBidsTable ? (
         <Table
