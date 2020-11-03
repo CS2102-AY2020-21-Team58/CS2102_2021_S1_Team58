@@ -1,3 +1,23 @@
+.container {
+  width: 100%;
+}
+
+.tab_bar {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #772c45;
+}
+
+.tab_bar > a {
+  color: #ac3b61;
+  font-weight: 600;
+}
+
+.tab_bar > .nav-link.active {
+  color: #ac3b61;
+  background-color: grey;
+  font-weight: 600;
+}
+
 .margin_12 {
   margin-top: 12px;
 }

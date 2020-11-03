@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {Button, Form} from 'react-bootstrap';
+import {Button, Form, Tabs, Tab} from 'react-bootstrap';
 import Cookies from 'js-cookie';
 import {useForm} from 'react-hook-form';
 import {FormCustom} from '../../components/FormCustom';
@@ -76,58 +76,66 @@ const PetsPage = () => {
   };
 
   return (
-    <div>
-      <h3>Current Pets</h3>
-      <Table data={state.petsData.data} columns={state.petsData.columns} />
+    <div className={style.container}>
+      <Tabs defaultActiveKey="pets" className={style.tab_bar}>
+        <Tab eventKey="pets" title="Your Pets">
+          <h3>Current Pets</h3>
+          <Table data={state.petsData.data} columns={state.petsData.columns} />
+        </Tab>
+        <Tab eventKey="submit" title="Add a Pet">
+          <h3>Add a pet</h3>
+          <FormCustom onSubmit={handleSubmit(submitPet)}>
+            <Form.Group>
+              <Form.Label>Pet Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Pet Name here"
+                name="petName"
+                ref={register}
+                required
+              />
+              <Form.Text className="text-muted">
+                Pet Names cannot repeat. After all, why would they?
+              </Form.Text>
+            </Form.Group>
 
-      <h3>Add a pet</h3>
-      <FormCustom onSubmit={handleSubmit(submitPet)}>
-        <Form.Group>
-          <Form.Label>Pet Name</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Pet Name here"
-            name="petName"
-            ref={register}
-            required
-          />
-          <Form.Text className="text-muted">
-            Pet Names cannot repeat. After all, why would they?
-          </Form.Text>
-        </Form.Group>
+            <Form.Group>
+              <Form.Label>Select Pet Type</Form.Label>
+              <Form.Control as="select" name="type" ref={register} required>
+                {allPetTypes.map((type, key) => (
+                  // eslint-disable-next-line
+                  <option value={type} key={key}>
+                    {type}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
 
-        <Form.Group>
-          <Form.Label>Select Pet Type</Form.Label>
-          <Form.Control as="select" name="type" ref={register} required>
-            {allPetTypes.map((type, key) => (
-              // eslint-disable-next-line
-              <option value={type} key={key}>
-                {type}
-              </option>
-            ))}
-          </Form.Control>
-        </Form.Group>
-
-        <Form.Group>
-          <Form.Label>Select Services Required</Form.Label>
-          <Form.Control
-            as="select"
-            name="services"
-            ref={register}
-            multiple
-            required>
-            {allPetServices.map((service, key) => (
-              // eslint-disable-next-line
-              <option value={service} key={key}>
-                {service}
-              </option>
-            ))}
-          </Form.Control>
-        </Form.Group>
-        <Button variant="primary" type="submit" className={style.submit_button}>
-          Submit
-        </Button>
-      </FormCustom>
+            <Form.Group>
+              <Form.Label>Select Services Required</Form.Label>
+              <Form.Control
+                as="select"
+                name="services"
+                ref={register}
+                multiple
+                required>
+                {allPetServices.map((service, key) => (
+                  // eslint-disable-next-line
+                  <option value={service} key={key}>
+                    {service}
+                  </option>
+                ))}
+              </Form.Control>
+            </Form.Group>
+            <Button
+              variant="primary"
+              type="submit"
+              className={style.submit_button}>
+              Submit
+            </Button>
+          </FormCustom>
+        </Tab>
+      </Tabs>
     </div>
   );
 };

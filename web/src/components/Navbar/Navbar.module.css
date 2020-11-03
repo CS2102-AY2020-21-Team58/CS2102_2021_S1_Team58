@@ -9,3 +9,7 @@
 .nav_links {
   margin-right: 12px;
 }
+
+.brand {
+  color: rgba(0,0,0,0.7) !important;
+}

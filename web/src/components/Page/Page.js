@@ -16,7 +16,13 @@ import style from './Page.module.css';
 
 const Page = () => {
   const authState = useSelector(state => state.auth);
-  const homePage = () => <p>Home Page</p>;
+  const homePage = () => (
+    <div className={style.home}>
+      <div className={style.heading}>Pet-Pals</div>
+      <img className={style.shiba} src="/shiba.svg" />
+      <div className={style.subtitle}>PET&apos;S BEST FRIEND</div>
+    </div>
+  );
   return (
     <div className={style.page}>
       <Navbar isLoggedIn={authState.isLoggedIn} />
