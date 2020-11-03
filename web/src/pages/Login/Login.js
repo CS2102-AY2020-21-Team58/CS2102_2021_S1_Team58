@@ -56,7 +56,7 @@ const Login = () => {
         <Form.Label>Username</Form.Label>
         <Form.Control type="text" name="username" ref={register} required />
         <Form.Text className="text-muted">
-          Please give a valid email that you have registered with
+          Please use a username you have registered with
         </Form.Text>
       </Form.Group>
 

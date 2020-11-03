@@ -1,0 +1,14 @@
+.table_container {
+  background: white;
+  padding: 24px;
+  border-radius: 10px;
+}
+
+.th {
+  background: #112d32;
+  color: #ffffff;
+}
+
+td > button {
+  margin: 0;
+}

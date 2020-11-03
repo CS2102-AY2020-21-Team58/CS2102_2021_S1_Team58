@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {Button, Form} from 'react-bootstrap';
+import {Button, Form, Tabs, Tab} from 'react-bootstrap';
 import moment from 'moment';
 import 'moment-timezone';
 import {useForm} from 'react-hook-form';
@@ -188,113 +188,140 @@ const Leaves = () => {
     // eslint-disable-next-line
   }, []);
 
+  console.log(state.supported);
+
   return (
-    <div>
-      {isFullTimer ? <h3>Upcoming Leaves</h3> : <h3>Upcoming Availability</h3>}
-      <Table data={state.leavesData.data} columns={state.leavesData.columns} />
-      {isFullTimer ? <h3>Apply Leave</h3> : <h3>Add Availability</h3>}
-      <div>
-        <span>
-          Start:
-          <input
-            type="date"
-            id="form-start"
-            name="form-start"
-            value={state.form.start}
-            min={todayDate}
-            max={maxDate}
-            onChange={event =>
-              setState({
-                ...state,
-                form: {...state.form, start: event.target.value},
-              })
-            }
+    <div className={style.container}>
+      <Tabs defaultActiveKey="upcoming" className={style.tab_bar}>
+        <Tab eventKey="upcoming" title="Upcoming">
+          {isFullTimer ? (
+            <h3>Upcoming Leaves</h3>
+          ) : (
+            <h3>Upcoming Availability</h3>
+          )}
+          <Table
+            data={state.leavesData.data}
+            columns={state.leavesData.columns}
           />
-        </span>
-        <br />
-        <span>
-          End:
-          <input
-            type="date"
-            id="form-end"
-            name="form-end"
-            value={state.form.end}
-            min={state.form.start}
-            max={maxDate}
-            onChange={event => {
-              setState({
-                ...state,
-                form: {...state.form, end: event.target.value},
-              });
-            }}
-          />
-        </span>
-      </div>
-      <Button
-        variant="primary"
-        onClick={submitLeave}
-        className={style.leaves_button}>
-        {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
-      </Button>
-      <br />
-      <br />
-      <h3 className={style.pet_types}>Pet Types and Services Supported</h3>
-      {Object.entries(state.supported)
-        .map(([pet, petServices]) => `${pet}: ${petServices.join(',')}`)
-        .join('\n')}
-      {Object.keys(state.supported).length !== 4 ||
-      Object.values(state.supported).reduce((x, y) => x + y.length, 0) !== 8 ? (
-        <div className={style.pet_types}>
-          <h5>Add New Pets and Service to Support</h5>
-          <FormCustom onSubmit={handleSubmit(submitNewPet)}>
-            <Form.Group>
-              <Form.Label>Pet Type</Form.Label>
-              <Form.Control
-                as="select"
-                name="pet"
-                ref={register}
-                required
+        </Tab>
+        <Tab
+          eventKey="add"
+          title={isFullTimer ? 'Add Leave' : 'Add Availability'}>
+          {isFullTimer ? <h3>Apply Leave</h3> : <h3>Add Availability</h3>}
+          <div>
+            <span>
+              Start:
+              <input
+                type="date"
+                id="form-start"
+                name="form-start"
+                value={state.form.start}
+                min={todayDate}
+                max={maxDate}
+                onChange={event =>
+                  setState({
+                    ...state,
+                    form: {...state.form, start: event.target.value},
+                  })
+                }
+              />
+            </span>
+            <br />
+            <span>
+              End:
+              <input
+                type="date"
+                id="form-end"
+                name="form-end"
+                value={state.form.end}
+                min={state.form.start}
+                max={maxDate}
                 onChange={event => {
-                  setState({...state, currentPetInFocus: event.target.value});
+                  setState({
+                    ...state,
+                    form: {...state.form, end: event.target.value},
+                  });
                 }}
-                value={state.currentPetInFocus}>
-                {unsupportedPetTypes(state.supported).map((item, key) => (
-                  // eslint-disable-next-line
-                  <option value={item} key={key}>
-                    {item}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Service</Form.Label>
-              <Form.Control as="select" name="service" ref={register} required>
-                {getServices().map((service, key) => (
-                  // eslint-disable-next-line
-                  <option value={service} key={key}>
-                    {service}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            {!Object.keys(state.supported).includes(state.currentPetInFocus) ? (
-              <Form.Group>
-                <Form.Label>Pet Base Price</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="price"
-                  // Cheap hack - may not cover all cases
-                  ref={register({validate: value => !isNaN(value)})}
-                  required
-                />
-              </Form.Group>
-            ) : null}{' '}
-            <Button variant="primary" type="submit">
-              Submit
-            </Button>
-          </FormCustom>
-        </div>
-      ) : null}
+              />
+            </span>
+          </div>
+          <Button
+            variant="primary"
+            onClick={submitLeave}
+            className={style.leaves_button}>
+            {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
+          </Button>
+        </Tab>
+        <Tab eventKey="services" title="Add Services">
+          <h5 className={style.pet_types}>Pet Types and Services Supported</h5>
+          {Object.entries(state.supported)
+            .map(([pet, petServices]) => `${pet}: ${petServices.join(', ')}`)
+            .join('; ')}
+          {Object.keys(state.supported).length !== 4 ||
+          Object.values(state.supported).reduce((x, y) => x + y.length, 0) !==
+            8 ? (
+            <div className={style.pet_types}>
+              <h5>Add New Pets and Service to Support</h5>
+              <FormCustom onSubmit={handleSubmit(submitNewPet)}>
+                <Form.Group>
+                  <Form.Label>Pet Type</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="pet"
+                    ref={register}
+                    required
+                    onChange={event => {
+                      setState({
+                        ...state,
+                        currentPetInFocus: event.target.value,
+                      });
+                    }}
+                    value={state.currentPetInFocus}>
+                    {unsupportedPetTypes(state.supported).map((item, key) => (
+                      // eslint-disable-next-line
+                      <option value={item} key={key}>
+                        {item}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                <Form.Group>
+                  <Form.Label>Service</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="service"
+                    ref={register}
+                    required>
+                    {getServices().map((service, key) => (
+                      // eslint-disable-next-line
+                      <option value={service} key={key}>
+                        {service}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                {!Object.keys(state.supported).includes(
+                  state.currentPetInFocus
+                ) ? (
+                  <Form.Group>
+                    <Form.Label>Pet Base Price</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="price"
+                      // Cheap hack - may not cover all cases
+                      ref={register({validate: value => !isNaN(value)})}
+                      required
+                    />
+                  </Form.Group>
+                ) : null}{' '}
+                <Button variant="primary" type="submit">
+                  Submit
+                </Button>
+              </FormCustom>
+            </div>
+          ) : null}
+        </Tab>
+      </Tabs>
     </div>
   );
 };
