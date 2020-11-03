@@ -6,10 +6,10 @@ const { Pool } = require("pg");
 
 // Change Database Settings Here BEFORE DEPLOYMENT
 const pool = new Pool({
-  user: "me", //process.env.DB_USER,
-  password: "password", //process.env.DB_PASSWORD,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
-  database: "petpals_real", // process.env.DB_NAME,
+  database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
 
@@ -1392,23 +1392,23 @@ function get_worst_ratings(req, res, next) {
 }
 
 function getBaseRates(req, res, next) {
-    console.log(req.params);
-    let query = queries.get_base_rates;
-    pool
-      .query(query)
-      .then((result) => {
-        res.status(200).json({ results: result.rows });
-      })
-      .catch((err) => {
-        res.status(404).json({
-          message: "Encountered problem fetching base rates.",
-          error: err,
-        });
-        console.log(err);
+  console.log(req.params);
+  let query = queries.get_base_rates;
+  pool
+    .query(query)
+    .then((result) => {
+      res.status(200).json({ results: result.rows });
+    })
+    .catch((err) => {
+      res.status(404).json({
+        message: "Encountered problem fetching base rates.",
+        error: err,
       });
-  }
+      console.log(err);
+    });
+}
 
-  /**
+/**
  *
  * Provide the following in path:
  * Animal name: String
@@ -1416,21 +1416,21 @@ function getBaseRates(req, res, next) {
  *
  */
 function updateBaseRates(req, res, next) {
-    console.log(req);
-    const animal = req.params.animal;
-    const rate = req.params.rate;
-  
-    pool
-      .query(queries.update_base_price, [animal, rate])
-      .then((result) => {
-        res.status(200).json({ results: result.rows });
-        console.log("Successfully updated price for caretaker!");
-      })
-      .catch((err) => {
-        res.status(404).json({
-          message: "Encountered problem updating base price.",
-          error: err,
-        });
-        console.log(err);
+  console.log(req);
+  const animal = req.params.animal;
+  const rate = req.params.rate;
+
+  pool
+    .query(queries.update_base_price, [animal, rate])
+    .then((result) => {
+      res.status(200).json({ results: result.rows });
+      console.log("Successfully updated price for caretaker!");
+    })
+    .catch((err) => {
+      res.status(404).json({
+        message: "Encountered problem updating base price.",
+        error: err,
       });
-  }
+      console.log(err);
+    });
+}
