@@ -19,7 +19,7 @@
 }
 
 .margin_12 {
-  margin-top: 12px;
+  margin: 12px 0px;
 }
 
 .margin_8 {
@@ -28,4 +28,9 @@
 
 .margin_r12 {
   margin-right: 12px;
+}
+
+.psuedo_form {
+  margin-bottom: 36px;
+  border-bottom: 1px solid rgba(0,0,0,0.7);
 }

@@ -41,6 +41,7 @@ const BidsCaretaker = () => {
             </Button>
             <Button
               variant="danger"
+              className={style.decline_btn}
               // eslint-disable-next-line
               onClick={() => submitAction('decline', row.values)}>
               Decline
