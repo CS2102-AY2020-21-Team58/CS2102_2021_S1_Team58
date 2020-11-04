@@ -6,6 +6,7 @@ import {useForm} from 'react-hook-form';
 import Cookies from 'js-cookie';
 import Table from '../../components/Table';
 import {FormCustom} from '../../components/FormCustom';
+import InfoBox from '../../components/InfoBox';
 import {
   allPetTypes,
   allPetServices,
@@ -27,6 +28,8 @@ const Leaves = () => {
     form: {start: todayDate, end: todayDate},
     supported: {},
     currentPetInFocus: '',
+    noOfPetDays: 0,
+    salaryThisMonth: 0,
   });
 
   const leavesColumns = [
@@ -116,6 +119,39 @@ const Leaves = () => {
     return allPetServices;
   };
 
+  const fetchCaretakerData = async () => {
+    const username = Cookies.get('petpals-username');
+
+    let salaryThisMonth = 0;
+    try {
+      const url = new URL(`${backendHost}/salary/${username}/${todayDate}`);
+      // eslint-disable-next-line
+      url.search = new URLSearchParams({usertype: caretakerType});
+      const salaryResponse = await fetch(url)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      salaryThisMonth = salaryResponse.results.salary;
+    } catch (error) {
+      createAlert('Failed to fetch caretaker salary');
+    }
+
+    let noOfPetDays = 0;
+    try {
+      const petDaysResponse = await fetch(
+        `${backendHost}/caretakers/${username}/pet_days/${todayDate}`
+      )
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      noOfPetDays = petDaysResponse.results[0].sum;
+    } catch (error) {
+      createAlert('Failed to fetch number of pet days worked');
+    }
+
+    return {noOfPetDays, salaryThisMonth};
+  };
+
   const fetchData = async () => {
     const username = Cookies.get('petpals-username');
     const animalsMap = {};
@@ -172,10 +208,14 @@ const Leaves = () => {
       createAlert('Failed to fetch leaves data');
     }
 
+    const {noOfPetDays, salaryThisMonth} = await fetchCaretakerData();
+
     setState({
       ...state,
       supported: animalsMap,
       leavesData: {columns: leavesColumns, data: leaves},
+      noOfPetDays,
+      salaryThisMonth,
       currentPetInFocus:
         unsupportedPetTypes(animalsMap).length === 0
           ? ''
@@ -188,7 +228,23 @@ const Leaves = () => {
     // eslint-disable-next-line
   }, []);
 
-  console.log(state.supported);
+  const caretakerData = (
+    <>
+      <h3>Your Summary</h3>
+      <div className={style.summary_box}>
+        <InfoBox
+          title="Number of Pet Days clocked this month"
+          content={state.noOfPetDays}
+          subtitle="This is the number of pets you have taken care of in a month"
+        />
+        <InfoBox
+          title="Total Salary earned this month"
+          content={`$${state.salaryThisMonth}`}
+          subtitle="Salary you are owed for this calendar month"
+        />
+      </div>
+    </>
+  );
 
   return (
     <div className={style.container}>
@@ -226,8 +282,7 @@ const Leaves = () => {
                 }
               />
             </span>
-            <br />
-            <span>
+            <span className={style.end_date}>
               End:
               <input
                 type="date"
@@ -320,6 +375,9 @@ const Leaves = () => {
               </FormCustom>
             </div>
           ) : null}
+        </Tab>
+        <Tab eventKey="data" title="Summary">
+          {caretakerData}
         </Tab>
       </Tabs>
     </div>

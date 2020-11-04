@@ -71,7 +71,7 @@ const Navbar = props => {
           userType === 'Administrator' ||
           userType === 'Both') ? (
           <Link to="/leaves">
-            <NavbarBS.Text className={style.nav_links}>Leaves</NavbarBS.Text>
+            <NavbarBS.Text className={style.nav_links}>Caretaker</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
@@ -79,18 +79,8 @@ const Navbar = props => {
         {isLoggedIn && userType === 'Administrator' ? (
           <Link to="/admin">
             <NavbarBS.Text className={style.nav_links}>
-              Administration
+              Administrator
             </NavbarBS.Text>
-          </Link>
-        ) : null}
-      </Nav>
-      <Nav className={`mr-auto ${style.nav_flex}`}>
-        {isLoggedIn &&
-        (userType === 'Caretaker' ||
-          userType === 'Both' ||
-          userType === 'Administrator') ? (
-          <Link to="/caretaker">
-            <NavbarBS.Text className={style.nav_links}>Caretaker</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>

@@ -6,3 +6,18 @@
 .section_value {
   font-size: 1.2rem;
 }
+
+.admin_page {
+  width: 100%;
+}
+
+.summary_box {
+  background: white;
+  border-radius: 10px;
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-evenly;
+  padding: 32px 16px;
+  margin-top: 24px;
+}

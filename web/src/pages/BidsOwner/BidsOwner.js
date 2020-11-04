@@ -299,7 +299,7 @@ const BidsOwner = () => {
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}
-          <Button variant="secondary" onClick={submitBooking}>
+          <Button variant="primary" onClick={submitBooking}>
             Submit
           </Button>
         </ModalBS.Footer>
@@ -353,68 +353,70 @@ const BidsOwner = () => {
           />
         </Tab>
         <Tab eventKey="new" title="New Bids">
-          <h3>Make new bids</h3>
-          <div>
-            <span className={style.margin_r12}>
-              Start Date:
-              <input
-                type="date"
-                id="form-start"
-                name="form-start"
-                value={state.form.start}
-                min={todayDate}
-                max={maxDate}
-                onChange={event =>
-                  setState({
-                    ...state,
-                    form: {...state.form, start: event.target.value},
-                  })
-                }
-              />
-            </span>
-            <span>
-              End:
-              <input
-                type="date"
-                id="form-end"
-                name="form-end"
-                value={state.form.end}
-                min={state.form.start}
-                max={maxDate}
+          <h3 className={style.margin_12}>Make new bids</h3>
+          <div className={style.psuedo_form}>
+            <div>
+              <span className={style.margin_r12}>
+                Start Date:
+                <input
+                  type="date"
+                  id="form-start"
+                  name="form-start"
+                  value={state.form.start}
+                  min={todayDate}
+                  max={maxDate}
+                  onChange={event =>
+                    setState({
+                      ...state,
+                      form: {...state.form, start: event.target.value},
+                    })
+                  }
+                />
+              </span>
+              <span>
+                End:
+                <input
+                  type="date"
+                  id="form-end"
+                  name="form-end"
+                  value={state.form.end}
+                  min={state.form.start}
+                  max={maxDate}
+                  onChange={event => {
+                    setState({
+                      ...state,
+                      form: {...state.form, end: event.target.value},
+                    });
+                  }}
+                />
+              </span>
+            </div>
+            <div className={style.margin_8}>
+              <span>Pet: </span>
+              <select
+                name="pet"
                 onChange={event => {
                   setState({
                     ...state,
-                    form: {...state.form, end: event.target.value},
+                    form: {...state.form, pet: event.target.value},
                   });
-                }}
-              />
-            </span>
+                }}>
+                <option value="">Select a pet</option>
+                {state.pets.map((type, key) => (
+                  <option value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <Button
+              variant="primary"
+              onClick={getAvailableCaretakers}
+              className={style.margin_12}
+              disabled={state.pets.length === 0}>
+              {state.pets.length === 0
+                ? 'Add a pet first'
+                : 'Search for availability'}
+            </Button>
           </div>
-          <div className={style.margin_8}>
-            <span>Pet: </span>
-            <select
-              name="pet"
-              onChange={event => {
-                setState({
-                  ...state,
-                  form: {...state.form, pet: event.target.value},
-                });
-              }}>
-              <option value="">Select a pet</option>
-              {state.pets.map((type, key) => (
-                <option value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-          <Button
-            variant="primary"
-            onClick={getAvailableCaretakers}
-            className={style.margin_12}
-            disabled={state.pets.length === 0}>
-            {state.pets.length === 0
-              ? 'Add a pet first'
-              : 'Search for availability'}
-          </Button>
           {state.showBidsTable ? (
             <Table
               className={style.margin_12}
