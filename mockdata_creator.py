@@ -112,7 +112,7 @@ for o in owners:
 
 # Add pets services
 
-services = ["walk", "feed", "hug", "medicate", "kiss", "exercise", "train"]
+services = ["Bathe", "Feed", "Take on walk", "Give pills"]
 
 f.write("INSERT INTO services (service_name) VALUES('walk');\n")
 f.write("INSERT INTO services (service_name) VALUES('feed');\n")
