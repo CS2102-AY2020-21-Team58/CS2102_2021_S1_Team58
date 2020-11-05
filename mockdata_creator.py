@@ -67,13 +67,12 @@ for i in range(0, 20):
         f.write(add_part.format(username))
 
 # Add pet types
-pet_types = ['dog', 'cat', 'lizard', 'bird', 'snake']
+pet_types = ['Dog', 'Cat', 'Big Dog', 'Lizard']
 
-f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('dog', 25);\n")
-f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('cat', 15);\n")
-f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('lizard', 10);\n")
-f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('bird', 12);\n")
-f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('snake', 30);\n")
+f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('Dog', 25);\n")
+f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('Cat', 15);\n")
+f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('Big Dog', 10);\n")
+f.write("INSERT INTO pet_types (animal_name, base_price) VALUES('Lizard', 12);\n")
 
 # Add caretaker handling
 
@@ -112,15 +111,12 @@ for o in owners:
 
 # Add pets services
 
-services = ["walk", "feed", "hug", "medicate", "kiss", "exercise", "train"]
+services = ['Bathe', 'Give pills', 'Take on walk', 'Feed']
 
-f.write("INSERT INTO services (service_name) VALUES('walk');\n")
-f.write("INSERT INTO services (service_name) VALUES('feed');\n")
-f.write("INSERT INTO services (service_name) VALUES('hug');\n")
-f.write("INSERT INTO services (service_name) VALUES('medicate');\n")
-f.write("INSERT INTO services (service_name) VALUES('kiss');\n")
-f.write("INSERT INTO services (service_name) VALUES('exercise');\n")
-f.write("INSERT INTO services (service_name) VALUES('train');\n")
+f.write("INSERT INTO services (service_name) VALUES('Bathe');\n")
+f.write("INSERT INTO services (service_name) VALUES('Take on walk');\n")
+f.write("INSERT INTO services (service_name) VALUES('Feed');\n")
+f.write("INSERT INTO services (service_name) VALUES('Give pills');\n")
 
 insert_petservice = "INSERT INTO requires (owner, pet_name, service_name) VALUES ('{}', '{}', '{}');\n"
 
