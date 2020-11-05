@@ -252,19 +252,20 @@ CREATE OR REPLACE FUNCTION update_avg_rating() RETURNS trigger AS $ret$
 
 CREATE OR REPLACE FUNCTION decline_clashing() RETURNS trigger AS $ret$
 	BEGIN
-		IF EXISTS (SELECT 1 FROM full_timers WHERE username=NEW.caretaker)
-            THEN UPDATE bookings b1 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
-                caretaker=NEW.caretaker AND
-                EXISTS (SELECT 1
-                    FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b1.end_period) AS INTEGER) - CAST(DATE_PART('day', b1.start_period) AS INTEGER)))) AS days) AS dates
-                    WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
-        ELSE
-            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status" = 'PENDING' AND
-                caretaker=NEW.caretaker AND
-                EXISTS (SELECT 1
-                    FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, (CAST(DATE_PART('day', b2.end_period) AS INTEGER) - CAST(DATE_PART('day', b2.start_period) AS INTEGER)))) AS days) AS dates
-                    WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = (SELECT CASE WHEN (SELECT average_rating FROM caretakers WHERE username=NEW.caretaker) >= 4.0 THEN 4 ELSE 2 END));
-                      
+        IF new.status = 'ACCEPTED' THEN
+            IF EXISTS (SELECT 1 FROM full_timers WHERE username=NEW.caretaker)
+                THEN UPDATE bookings b1 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
+                        caretaker=NEW.caretaker AND
+                        EXISTS (SELECT 1
+                                FROM (SELECT b1.start_period + (interval '1' day * generate_series(0, CAST((b1.end_period - b1.start_period) AS INTEGER))) AS days) AS dates
+                                WHERE (SELECT COUNT(*) FROM bookings b WHERE b.status='ACCEPTED' AND b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = 5);
+          ELSE
+            UPDATE bookings b2 SET "status" = 'DECLINED' WHERE "status"='PENDING' AND
+                        caretaker=NEW.caretaker AND
+                        EXISTS (SELECT 1
+                                FROM (SELECT b2.start_period + (interval '1' day * generate_series(0, CAST((b2.end_period - b2.start_period) AS INTEGER))) AS days) AS dates
+                                WHERE (SELECT COUNT(*) FROM bookings b WHERE b.caretaker=NEW.caretaker AND b.start_period<=dates.days AND b.end_period>=dates.days) = (SELECT CASE WHEN (SELECT average_rating FROM caretakers WHERE username=NEW.caretaker) >= 4.0 THEN 4 ELSE 2 END));
+            END IF;
         END IF;
     RETURN NEW;
 	END;    
@@ -426,4 +427,3 @@ CREATE TRIGGER insert_availability
     BEFORE INSERT ON available_dates
     FOR EACH ROW
 EXECUTE PROCEDURE check_and_merge_availability();
-
