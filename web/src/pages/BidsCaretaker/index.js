@@ -12,6 +12,7 @@ const BidsCaretaker = () => {
   const [state, setState] = useState({
     upcoming: {data: [], columns: []},
     pending: {data: [], columns: []},
+    previous: {data: [], columns: []},
   });
 
   const upcomingColumns = [
@@ -19,6 +20,14 @@ const BidsCaretaker = () => {
     {Header: 'Pet Name', accessor: 'pet_name'},
     {Header: 'Bid Price', accessor: 'bid_rate'},
     {Header: 'Job Date', accessor: 'start_period'},
+  ];
+
+  const previousColumns = [
+    {Header: 'Owner', accessor: 'owner'},
+    {Header: 'Pet Name', accessor: 'pet_name'},
+    {Header: 'Bid Price', accessor: 'bid_rate'},
+    {Header: 'Job Date', accessor: 'start_period'},
+    {Header: 'Rating', accessor: 'rating'},
   ];
 
   const pendingColumns = [
@@ -120,11 +129,19 @@ const BidsCaretaker = () => {
     pendingBookings = pendingBookings.filter(
       booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
     );
+    const pastBookings = confirmedBookings
+      .filter(booking => Date.parse(booking.end_period) < Date.parse(todayDate))
+      .map(booking => ({
+        ...booking,
+        // eslint-disable-next-line
+        ratings: booking.rating == undefined ? 'Not rated' : booking.rating,
+      }));
 
     setState({
       ...state,
       upcoming: {data: upcomingBookings, columns: upcomingColumns},
       pending: {data: pendingBookings, columns: pendingColumns},
+      previous: {data: pastBookings, columns: previousColumns},
     });
   };
 
@@ -143,6 +160,10 @@ const BidsCaretaker = () => {
         <Tab eventKey="pending" title="Pending Bids">
           <h3>Pending Bids</h3>
           <Table columns={state.pending.columns} data={state.pending.data} />
+        </Tab>
+        <Tab eventKey="previous" title="Past Jobs">
+          <h3>Past Jobs</h3>
+          <Table columns={state.previous.columns} data={state.previous.data} />
         </Tab>
       </Tabs>
     </div>

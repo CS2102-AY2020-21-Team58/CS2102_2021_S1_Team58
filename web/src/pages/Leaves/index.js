@@ -41,7 +41,9 @@ const Leaves = () => {
   const isFullTimer = caretakerType === 'fulltime';
   const unsupportedPetTypes = obj =>
     allPetTypes.filter(
-      type => !Object.keys(obj).includes(type) || obj[type].length !== 2
+      type =>
+        !Object.keys(obj).includes(type) ||
+        obj[type].length !== allPetServices.length
     );
 
   const submitLeave = async () => {

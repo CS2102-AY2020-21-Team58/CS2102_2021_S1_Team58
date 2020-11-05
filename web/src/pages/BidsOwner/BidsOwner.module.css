@@ -3,8 +3,8 @@
 }
 
 .tab_bar {
-  margin-bottom: 16px;
   border-bottom: 1px solid #772c45;
+  margin-bottom: 16px;
 }
 
 .tab_bar > a {
@@ -13,13 +13,13 @@
 }
 
 .tab_bar > .nav-link.active {
-  color: #ac3b61;
   background-color: grey;
+  color: #ac3b61;
   font-weight: 600;
 }
 
 .margin_12 {
-  margin: 12px 0px;
+  margin: 12px 0;
 }
 
 .margin_8 {
@@ -31,6 +31,14 @@
 }
 
 .psuedo_form {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
   margin-bottom: 36px;
-  border-bottom: 1px solid rgba(0,0,0,0.7);
+}
+
+.bid_entry {
+  margin-bottom: 20px;
+}
+
+.bid_entry > p {
+  text-decoration: underline;
 }
