@@ -33,19 +33,48 @@ const Leaves = () => {
     salaryThisMonth: 0,
   });
 
+  const caretakerType = Cookies.get('caretaker-type');
+  const isFullTimer = caretakerType === 'fulltime';
+
   const leavesColumns = [
     {Header: 'Start', accessor: 'start'},
     {Header: 'End', accessor: 'end'},
+    {
+      Header: isFullTimer ? 'Cancel Leave' : 'Cancel Availability',
+      id: 'cancel',
+      // eslint-disable-next-line
+      Cell: ({row}) => (
+        // eslint-disable-next-line
+        <Button onClick={cancelLeaveAvailability(row.values)} variant="danger">
+          Cancel
+        </Button>
+      ),
+    },
   ];
 
-  const caretakerType = Cookies.get('caretaker-type');
-  const isFullTimer = caretakerType === 'fulltime';
   const unsupportedPetTypes = obj =>
     allPetTypes.filter(
       type =>
         !Object.keys(obj).includes(type) ||
         obj[type].length !== allPetServices.length
     );
+
+  const cancelLeaveAvailability = values => async () => {
+    const username = Cookies.get('petpals-username');
+    try {
+      await fetch(`${backendHost}/caretakers/${username}/leaves_availability`, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          start_period: values.start,
+          end_period: values.end,
+        }),
+      }).then(fetchStatusHandler);
+      await fetchData();
+    } catch (error) {
+      createAlert('Failed to delete leave/availability');
+    }
+  };
 
   const submitLeave = async () => {
     const {start, end} = state.form;
@@ -68,7 +97,7 @@ const Leaves = () => {
       }).then(fetchStatusHandler);
       await fetchData();
     } catch (error) {
-      createAlert('Failed to register service');
+      createAlert('Failed to Submit leave/availability');
     }
   };
 

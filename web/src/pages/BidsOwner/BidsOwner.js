@@ -283,13 +283,16 @@ const BidsOwner = () => {
       start_period: date,
     } = modalState.reviewModalData;
 
+    // good old web api
+    const review = document.querySelector('#review').value;
+
     try {
       await fetch(
         `${backendHost}/booking/${username}/${petName}/${caretaker}/${date}/${date}`,
         {
           method: 'PUT',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({rating}),
+          body: JSON.stringify({rating, review}),
         }
       ).then(fetchStatusHandler);
       await fetchData();
@@ -388,13 +391,22 @@ const BidsOwner = () => {
         title="Leave a Review for this service"
         handleClose={handleModalClose}>
         <ModalBS.Body>
-          <select name="review" onChange={changeRatings}>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
+          <div className={style.review}>
+            <div className={style.bid_entry}>
+              <p>Rating</p>
+              <select name="review" onChange={changeRatings}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div className={style.bid_entry}>
+              <p>Review</p>
+              <textarea id="review" />
+            </div>
+          </div>
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}

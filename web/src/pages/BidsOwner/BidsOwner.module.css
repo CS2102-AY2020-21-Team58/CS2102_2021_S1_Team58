@@ -42,3 +42,12 @@
 .bid_entry > p {
   text-decoration: underline;
 }
+
+.bid_entry > textarea {
+  width: 100%;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+}
