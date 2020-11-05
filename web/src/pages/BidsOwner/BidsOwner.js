@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import moment from 'moment';
 import 'moment-timezone';
 import Cookies from 'js-cookie';
-import {Button, Modal as ModalBS} from 'react-bootstrap';
+import {Button, Modal as ModalBS, Tabs, Tab} from 'react-bootstrap';
 import Table from '../../components/Table';
 import Modal from '../../components/Modal';
 import {
@@ -23,6 +23,7 @@ const BidsOwner = () => {
     pastBidsTable: {columns: [], data: []},
     showBidsTable: false,
     form: {start: todayDate, end: todayDate, pet: ''},
+    pets: [],
   });
   const [modalState, setModalState] = useState({
     modalToShow: '',
@@ -177,7 +178,6 @@ const BidsOwner = () => {
       });
     } catch (error) {
       createAlert('Could not fetch data');
-      return;
     }
 
     const pastBookings = confirmedBookings.filter(
@@ -187,10 +187,22 @@ const BidsOwner = () => {
       booking => Date.parse(booking.end_period) >= Date.parse(todayDate)
     );
 
+    let pets = [];
+    try {
+      const petsResponse = await fetch(`${backendHost}/owner/${username}/pets`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      pets = [...new Set(petsResponse.results.map(pet => pet.pet_name))];
+    } catch (error) {
+      createAlert('Failed to fetch pets');
+    }
+
     setState({
       ...state,
       pastBidsTable: {columns: pastColumns, data: pastBookings},
       upcomingBidsTable: {columns: upcomingColumns, data: upcomingBookings},
+      pets,
     });
   };
 
@@ -287,7 +299,7 @@ const BidsOwner = () => {
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}
-          <Button variant="secondary" onClick={submitBooking}>
+          <Button variant="primary" onClick={submitBooking}>
             Submit
           </Button>
         </ModalBS.Footer>
@@ -324,82 +336,96 @@ const BidsOwner = () => {
   }, []);
 
   return (
-    <div>
-      <h3>Your Past bids</h3>
-      <Table
-        columns={state.pastBidsTable.columns}
-        data={state.pastBidsTable.data}
-      />
-      <h3>Upcoming bids</h3>
-      <Table
-        columns={state.upcomingBidsTable.columns}
-        data={state.upcomingBidsTable.data}
-      />
-      <h3>Make new bids</h3>
-      <div>
-        <span className={style.margin_r12}>
-          Start Date:
-          <input
-            type="date"
-            id="form-start"
-            name="form-start"
-            value={state.form.start}
-            min={todayDate}
-            max={maxDate}
-            onChange={event =>
-              setState({
-                ...state,
-                form: {...state.form, start: event.target.value},
-              })
-            }
+    <div className={style.container}>
+      <Tabs defaultActiveKey="past" className={style.tab_bar}>
+        <Tab eventKey="past" title="Past Bids">
+          <h3>Past bids</h3>
+          <Table
+            columns={state.pastBidsTable.columns}
+            data={state.pastBidsTable.data}
           />
-        </span>
-        <span>
-          End:
-          <input
-            type="date"
-            id="form-end"
-            name="form-end"
-            value={state.form.end}
-            min={state.form.start}
-            max={maxDate}
-            onChange={event => {
-              setState({
-                ...state,
-                form: {...state.form, end: event.target.value},
-              });
-            }}
+        </Tab>
+        <Tab eventKey="upcoming" title="Upcoming Bids">
+          <h3>Upcoming bids</h3>
+          <Table
+            columns={state.upcomingBidsTable.columns}
+            data={state.upcomingBidsTable.data}
           />
-        </span>
-      </div>
-      <div className={style.margin_8}>
-        <span>Pet Type: </span>
-        <select
-          name="pet"
-          onChange={event => {
-            setState({
-              ...state,
-              form: {...state.form, pet: event.target.value},
-            });
-          }}>
-          <option value="">Select a pet</option>
-          <option value="garfield">garfield</option>
-          <option value="lion">lion</option>
-        </select>
-      </div>
-      <Button
-        variant="primary"
-        onClick={getAvailableCaretakers}
-        className={style.margin_12}>
-        Search for availability
-      </Button>
-      {state.showBidsTable ? (
-        <Table
-          className={style.margin_12}
-          columns={state.newBidsTable.columns}
-          data={state.newBidsTable.data}
-        />
-      ) : null}
+        </Tab>
+        <Tab eventKey="new" title="New Bids">
+          <h3 className={style.margin_12}>Make new bids</h3>
+          <div className={style.psuedo_form}>
+            <div>
+              <span className={style.margin_r12}>
+                Start Date:
+                <input
+                  type="date"
+                  id="form-start"
+                  name="form-start"
+                  value={state.form.start}
+                  min={todayDate}
+                  max={maxDate}
+                  onChange={event =>
+                    setState({
+                      ...state,
+                      form: {...state.form, start: event.target.value},
+                    })
+                  }
+                />
+              </span>
+              <span>
+                End:
+                <input
+                  type="date"
+                  id="form-end"
+                  name="form-end"
+                  value={state.form.end}
+                  min={state.form.start}
+                  max={maxDate}
+                  onChange={event => {
+                    setState({
+                      ...state,
+                      form: {...state.form, end: event.target.value},
+                    });
+                  }}
+                />
+              </span>
+            </div>
+            <div className={style.margin_8}>
+              <span>Pet: </span>
+              <select
+                name="pet"
+                onChange={event => {
+                  setState({
+                    ...state,
+                    form: {...state.form, pet: event.target.value},
+                  });
+                }}>
+                <option value="">Select a pet</option>
+                {state.pets.map((type, key) => (
+                  <option value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <Button
+              variant="primary"
+              onClick={getAvailableCaretakers}
+              className={style.margin_12}
+              disabled={state.pets.length === 0}>
+              {state.pets.length === 0
+                ? 'Add a pet first'
+                : 'Search for availability'}
+            </Button>
+          </div>
+          {state.showBidsTable ? (
+            <Table
+              className={style.margin_12}
+              columns={state.newBidsTable.columns}
+              data={state.newBidsTable.data}
+            />
+          ) : null}
+        </Tab>
+      </Tabs>
       {bidModal}
       {reviewModalData}
     </div>

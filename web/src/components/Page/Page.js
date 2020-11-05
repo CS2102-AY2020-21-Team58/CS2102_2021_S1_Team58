@@ -8,13 +8,21 @@ import {BidsOwner} from '../../pages/BidsOwner';
 import BidsCaretaker from '../../pages/BidsCaretaker';
 import Leaves from '../../pages/Leaves';
 import PetsPage from '../../pages/Pets';
-import Salary from '../../pages/Salary';
+// eslint-disable-next-line
+import Admin from '../../pages/Admin';
+import Caretaker from '../../pages/Caretaker';
 import Logout from '../../pages/Logout';
 import style from './Page.module.css';
 
 const Page = () => {
   const authState = useSelector(state => state.auth);
-  const homePage = () => <p>Home Page</p>;
+  const homePage = () => (
+    <div className={style.home}>
+      <div className={style.heading}>Pet-Pals</div>
+      <img className={style.shiba} src="/shiba.svg" />
+      <div className={style.subtitle}>PET&apos;S BEST FRIEND</div>
+    </div>
+  );
   return (
     <div className={style.page}>
       <Navbar isLoggedIn={authState.isLoggedIn} />
@@ -28,7 +36,8 @@ const Page = () => {
           <Route exact path="/caretaker-bids" component={BidsCaretaker} />
           <Route exact path="/pets" component={PetsPage} />
           <Route exact path="/leaves" component={Leaves} />
-          <Route exact path="/salary" component={Salary} />
+          <Route exact path="/admin" component={Admin} />
+          <Route exact path="/caretaker" component={Caretaker} />
           <Route exact path="/logout" component={Logout} />
         </Switch>
       </div>

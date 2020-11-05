@@ -10,9 +10,9 @@ const Navbar = props => {
   const isLoggedIn = props.isLoggedIn || isCookieSet();
   const userType = Cookies.get('petpals-userType');
   return (
-    <NavbarBS bg="light" className={style.navbar}>
+    <NavbarBS className={style.navbar}>
       <Link to="/">
-        <NavbarBS.Brand>Pet-Pals</NavbarBS.Brand>
+        <NavbarBS.Brand className={style.brand}>Pet-Pals</NavbarBS.Brand>
       </Link>
       <Nav className={`mr-auto ${style.nav_flex}`}>
         {!isLoggedIn ? (
@@ -71,23 +71,22 @@ const Navbar = props => {
           userType === 'Administrator' ||
           userType === 'Both') ? (
           <Link to="/leaves">
-            <NavbarBS.Text className={style.nav_links}>Leaves</NavbarBS.Text>
+            <NavbarBS.Text className={style.nav_links}>Caretaker</NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
       <Nav className={`mr-auto ${style.nav_flex}`}>
         {isLoggedIn && userType === 'Administrator' ? (
-          <Link to="/salary">
-            <NavbarBS.Text className={style.nav_links}>Salary</NavbarBS.Text>
+          <Link to="/admin">
+            <NavbarBS.Text className={style.nav_links}>
+              Administrator
+            </NavbarBS.Text>
           </Link>
         ) : null}
       </Nav>
       {isLoggedIn ? (
         <NavbarBS.Collapse className="justify-content-end">
           <>
-            <NavbarBS.Text className={style.nav_links}>
-              User Type: {userType}
-            </NavbarBS.Text>
             <Link to="/logout">
               <NavbarBS.Text>Logout</NavbarBS.Text>
             </Link>

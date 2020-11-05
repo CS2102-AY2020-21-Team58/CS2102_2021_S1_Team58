@@ -146,13 +146,13 @@ sql.query = {
     //delete availability
     delete_availability: 'DELETE FROM available_dates WHERE username = $1 AND start_period = $2 AND end_period = $3',
     //delete booking
-    delete_booking: 'DELETE FROM bookings WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4 AND end_period = $5',
+    delete_booking: 'DELETE FROM bookings WHERE owner = $1 AND pet_name = $2 AND caretaker = $3 AND start_period = $4::timestamp AND end_period = $5::timestamp',
 
     //BASIC QUERIES
     //Check if given username is in users table. Returns 1 if true.
     check_if_username_exists: 'SELECT COUNT(*) FROM users WHERE username=$1',
     //Check if given username is a petowner. Returns 1 if true.
-    check_if_pet_owner: 'SELECT 1 FROM users WHERE username=$1',
+    check_if_pet_owner: 'SELECT 1 FROM owners WHERE username=$1',
     //check if given username is admin. Returns 1 if true.
     check_if_admin: 'SELECT 1 FROM administrator WHERE username=$1',
     //check if given username is caretaker. Returns 1 if true.
@@ -219,6 +219,8 @@ sql.query = {
     get_ratings_desc: 'SELECT rating, remarks FROM bookings WHERE caretaker = $1 AND rating IS NOT NULL ORDER BY rating DESC',
     //get caretakers in the same area
     get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
+    //get base rates
+    get_base_rates: 'SELECT * FROM pet_types',
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
@@ -653,17 +655,17 @@ WHERE caretaker = C.username AND status = \'ACCEPTED\') <= 60 \
     // $2 = Date in the month for which you need the data
     pet_days_for_month: `SELECT SUM( \
         CASE \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', start_period) AND (DATE_PART(\'month\', TIMESTAMP $2) < DATE_PART(\'month\', end_period) OR DATE_PART(\'year\', TIMESTAMP $2) < DATE_PART(\'year\', end_period)) THEN \
+            WHEN DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) = DATE_PART(\'month\', start_period) AND (DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) < DATE_PART(\'month\', end_period) OR DATE_PART(\'year\', CAST ( $2 AS TIMESTAMP )) < DATE_PART(\'year\', end_period)) THEN \
                 DATE_PART(\'day\', (date_trunc(\'month\', start_period) + interval \'1 month\') - start_period) \
-            WHEN DATE_PART(\'month\', TIMESTAMP $2) = DATE_PART(\'month\', end_period) AND (DATE_PART(\'month\', TIMESTAMP $2) > DATE_PART(\'month\', start_period) OR DATE_PART(\'year\', TIMESTAMP $2) > DATE_PART(\'year\', end_period)) THEN \
+            WHEN DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) = DATE_PART(\'month\', end_period) AND (DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) > DATE_PART(\'month\', start_period) OR DATE_PART(\'year\', CAST ( $2 AS TIMESTAMP )) > DATE_PART(\'year\', end_period)) THEN \
                 DATE_PART(\'day\', end_period) \
-            WHEN DATE_PART(\'month\', start_period) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period) = DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period) = DATE_PART(\'year\', end_period) THEN \
+            WHEN DATE_PART(\'month\', start_period) = DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period) = DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period) = DATE_PART(\'year\', end_period) THEN \
                 end_period - start_period + 1 \
-            WHEN DATE_PART(\'month\', start_period) < DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'month\', end_period) > DATE_PART(\'month\', TIMESTAMP $2) AND DATE_PART(\'year\', start_period) <= DATE_PART(\'year\', TIMESTAMP $2) AND DATE_PART(\'year\', end_period) >= DATE_PART(\'year\', TIMESTAMP $2) THEN \
-                DATE_PART(\'day\', date_trunc(\'month\', TIMESTAMP $2) + interval \'1 month\' - interval \'1 day\') \
+            WHEN DATE_PART(\'month\', start_period) < DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) AND DATE_PART(\'month\', end_period) > DATE_PART(\'month\', CAST ( $2 AS TIMESTAMP )) AND DATE_PART(\'year\', start_period) <= DATE_PART(\'year\', CAST ( $2 AS TIMESTAMP )) AND DATE_PART(\'year\', end_period) >= DATE_PART(\'year\', CAST ( $2 AS TIMESTAMP )) THEN \
+                DATE_PART(\'day\', date_trunc(\'month\', CAST ( $2 AS TIMESTAMP )) + interval \'1 month\' - interval \'1 day\') \
         END) \
         FROM bookings \
-        WHERE caretaker = $1 AND status = ${STATUS_ACCEPTED}`,
+        WHERE caretaker = $1 AND status = \'${STATUS_ACCEPTED}\'`,
 
     // $1 = Name of caretaker
     caretaker_pending_bids: `SELECT caretaker, owner, pet_name, start_period, end_period, payment_method, delivery_method, bid_rate \

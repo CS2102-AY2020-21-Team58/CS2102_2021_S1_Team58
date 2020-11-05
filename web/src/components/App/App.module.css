@@ -3,3 +3,58 @@
   height: 100%;
   width: 100%;
 }
+
+html {
+  min-height: 100%;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+/*//////////////////////////////////////////////////////////////////
+[ FONT ]*/
+
+
+@font-face {
+  font-family: Roboto-Regular;
+  src: url('/fonts/roboto/Roboto-Regular.ttf');
+}
+
+@font-face {
+  font-family: Roboto-Medium;
+  src: url('/fonts/roboto/Roboto-Medium.ttf');
+}
+
+@font-face {
+  font-family: Roboto-Bold;
+  src: url('/fonts/roboto/Roboto-Bold.ttf');
+}
+
+@font-face {
+  font-family: Arvo-Regular;
+  src: url('/fonts/Arvo/Arvo-Regular.ttf');
+}
+
+@font-face {
+  font-family: Arvo-Bold;
+  src: url('/fonts/Arvo/Arvo-Bold.ttf');
+}
+
+body {
+  background: linear-gradient(45deg, #edc7b7, #eee2dc);
+  font-family: Roboto-Regular;
+  min-height: 100%;
+}
+
+h5 {
+  color: #123c69;
+  font-family: Roboto-Medium;
+  margin-bottom: 16px;
+}
+
+h3 {
+  color: #123c69;
+  font-family: Roboto-Bold;
+}

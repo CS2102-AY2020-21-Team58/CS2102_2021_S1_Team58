@@ -1,11 +1,12 @@
 import React, {useState, useEffect} from 'react';
-import {Button, Form} from 'react-bootstrap';
+import {Button, Form, Tabs, Tab} from 'react-bootstrap';
 import moment from 'moment';
 import 'moment-timezone';
 import {useForm} from 'react-hook-form';
 import Cookies from 'js-cookie';
 import Table from '../../components/Table';
 import {FormCustom} from '../../components/FormCustom';
+import InfoBox from '../../components/InfoBox';
 import {
   allPetTypes,
   allPetServices,
@@ -27,6 +28,8 @@ const Leaves = () => {
     form: {start: todayDate, end: todayDate},
     supported: {},
     currentPetInFocus: '',
+    noOfPetDays: 0,
+    salaryThisMonth: 0,
   });
 
   const leavesColumns = [
@@ -35,7 +38,6 @@ const Leaves = () => {
   ];
 
   const caretakerType = Cookies.get('caretaker-type');
-  const userType = Cookies.get('petpals-userType');
   const isFullTimer = caretakerType === 'fulltime';
   const unsupportedPetTypes = obj =>
     allPetTypes.filter(
@@ -68,7 +70,6 @@ const Leaves = () => {
   };
 
   const submitNewPet = async data => {
-    console.log(data);
     const username = Cookies.get('petpals-username');
     if (data.price !== undefined) {
       try {
@@ -116,6 +117,39 @@ const Leaves = () => {
     }
 
     return allPetServices;
+  };
+
+  const fetchCaretakerData = async () => {
+    const username = Cookies.get('petpals-username');
+
+    let salaryThisMonth = 0;
+    try {
+      const url = new URL(`${backendHost}/salary/${username}/${todayDate}`);
+      // eslint-disable-next-line
+      url.search = new URLSearchParams({usertype: caretakerType});
+      const salaryResponse = await fetch(url)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      salaryThisMonth = salaryResponse.results.salary;
+    } catch (error) {
+      createAlert('Failed to fetch caretaker salary');
+    }
+
+    let noOfPetDays = 0;
+    try {
+      const petDaysResponse = await fetch(
+        `${backendHost}/caretakers/${username}/pet_days/${todayDate}`
+      )
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      // eslint-disable-next-line
+      noOfPetDays = petDaysResponse.results[0].sum;
+    } catch (error) {
+      createAlert('Failed to fetch number of pet days worked');
+    }
+
+    return {noOfPetDays, salaryThisMonth};
   };
 
   const fetchData = async () => {
@@ -174,10 +208,14 @@ const Leaves = () => {
       createAlert('Failed to fetch leaves data');
     }
 
+    const {noOfPetDays, salaryThisMonth} = await fetchCaretakerData();
+
     setState({
       ...state,
       supported: animalsMap,
       leavesData: {columns: leavesColumns, data: leaves},
+      noOfPetDays,
+      salaryThisMonth,
       currentPetInFocus:
         unsupportedPetTypes(animalsMap).length === 0
           ? ''
@@ -190,111 +228,158 @@ const Leaves = () => {
     // eslint-disable-next-line
   }, []);
 
-  return (
-    <div>
-      {isFullTimer ? <h3>Upcoming Leaves</h3> : <h3>Upcoming Availability</h3>}
-      <Table data={state.leavesData.data} columns={state.leavesData.columns} />
-      {isFullTimer ? <h3>Apply Leave</h3> : <h3>Add Availability</h3>}
-      <div>
-        <span>
-          Start:
-          <input
-            type="date"
-            id="form-start"
-            name="form-start"
-            value={state.form.start}
-            min={todayDate}
-            max={maxDate}
-            onChange={event =>
-              setState({
-                ...state,
-                form: {...state.form, start: event.target.value},
-              })
-            }
-          />
-        </span>
-        <br />
-        <span>
-          End:
-          <input
-            type="date"
-            id="form-end"
-            name="form-end"
-            value={state.form.end}
-            min={state.form.start}
-            max={maxDate}
-            onChange={event => {
-              setState({
-                ...state,
-                form: {...state.form, end: event.target.value},
-              });
-            }}
-          />
-        </span>
+  const caretakerData = (
+    <>
+      <h3>Your Summary</h3>
+      <div className={style.summary_box}>
+        <InfoBox
+          title="Number of Pet Days clocked this month"
+          content={state.noOfPetDays}
+          subtitle="This is the number of pets you have taken care of in a month"
+        />
+        <InfoBox
+          title="Total Salary earned this month"
+          content={`$${state.salaryThisMonth}`}
+          subtitle="Salary you are owed for this calendar month"
+        />
       </div>
-      <Button
-        variant="primary"
-        onClick={submitLeave}
-        className={style.leaves_button}>
-        {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
-      </Button>
-      <h3 className={style.pet_types}>Pet Types and Services Supported</h3>
-      {Object.entries(state.supported)
-        .map(([pet, petServices]) => `${pet}: ${petServices.join(',')}`)
-        .join('\n')}
-      {Object.keys(state.supported).length !== 4 ||
-      Object.values(state.supported).reduce((x, y) => x + y.length, 0) !== 8 ? (
-        <div className={style.pet_types}>
-          <h5>Add New Pets and Service to Support</h5>
-          <FormCustom onSubmit={handleSubmit(submitNewPet)}>
-            <Form.Group>
-              <Form.Label>Pet Type</Form.Label>
-              <Form.Control
-                as="select"
-                name="pet"
-                ref={register}
-                required
+    </>
+  );
+
+  return (
+    <div className={style.container}>
+      <Tabs defaultActiveKey="upcoming" className={style.tab_bar}>
+        <Tab eventKey="upcoming" title="Upcoming">
+          {isFullTimer ? (
+            <h3>Upcoming Leaves</h3>
+          ) : (
+            <h3>Upcoming Availability</h3>
+          )}
+          <Table
+            data={state.leavesData.data}
+            columns={state.leavesData.columns}
+          />
+        </Tab>
+        <Tab
+          eventKey="add"
+          title={isFullTimer ? 'Add Leave' : 'Add Availability'}>
+          {isFullTimer ? <h3>Apply Leave</h3> : <h3>Add Availability</h3>}
+          <div>
+            <span>
+              Start:
+              <input
+                type="date"
+                id="form-start"
+                name="form-start"
+                value={state.form.start}
+                min={todayDate}
+                max={maxDate}
+                onChange={event =>
+                  setState({
+                    ...state,
+                    form: {...state.form, start: event.target.value},
+                  })
+                }
+              />
+            </span>
+            <span className={style.end_date}>
+              End:
+              <input
+                type="date"
+                id="form-end"
+                name="form-end"
+                value={state.form.end}
+                min={state.form.start}
+                max={maxDate}
                 onChange={event => {
-                  setState({...state, currentPetInFocus: event.target.value});
+                  setState({
+                    ...state,
+                    form: {...state.form, end: event.target.value},
+                  });
                 }}
-                value={state.currentPetInFocus}>
-                {unsupportedPetTypes(state.supported).map((item, key) => (
-                  // eslint-disable-next-line
-                  <option value={item} key={key}>
-                    {item}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Service</Form.Label>
-              <Form.Control as="select" name="service" ref={register} required>
-                {getServices().map((service, key) => (
-                  // eslint-disable-next-line
-                  <option value={service} key={key}>
-                    {service}
-                  </option>
-                ))}
-              </Form.Control>
-            </Form.Group>
-            {!Object.keys(state.supported).includes(state.currentPetInFocus) ? (
-              <Form.Group>
-                <Form.Label>Pet Base Price</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="price"
-                  // Cheap hack - may not cover all cases
-                  ref={register({validate: value => !isNaN(value)})}
-                  required
-                />
-              </Form.Group>
-            ) : null}{' '}
-            <Button variant="primary" type="submit">
-              Submit
-            </Button>
-          </FormCustom>
-        </div>
-      ) : null}
+              />
+            </span>
+          </div>
+          <Button
+            variant="primary"
+            onClick={submitLeave}
+            className={style.leaves_button}>
+            {isFullTimer ? 'Submit Leaves' : 'Submit Availability'}
+          </Button>
+        </Tab>
+        <Tab eventKey="services" title="Add Services">
+          <h5 className={style.pet_types}>Pet Types and Services Supported</h5>
+          {Object.entries(state.supported)
+            .map(([pet, petServices]) => `${pet}: ${petServices.join(', ')}`)
+            .join('; ')}
+          {Object.keys(state.supported).length !== 4 ||
+          Object.values(state.supported).reduce((x, y) => x + y.length, 0) !==
+            8 ? (
+            <div className={style.pet_types}>
+              <h5>Add New Pets and Service to Support</h5>
+              <FormCustom onSubmit={handleSubmit(submitNewPet)}>
+                <Form.Group>
+                  <Form.Label>Pet Type</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="pet"
+                    ref={register}
+                    required
+                    onChange={event => {
+                      setState({
+                        ...state,
+                        currentPetInFocus: event.target.value,
+                      });
+                    }}
+                    value={state.currentPetInFocus}>
+                    {unsupportedPetTypes(state.supported).map((item, key) => (
+                      // eslint-disable-next-line
+                      <option value={item} key={key}>
+                        {item}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                <Form.Group>
+                  <Form.Label>Service</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="service"
+                    ref={register}
+                    required>
+                    {getServices().map((service, key) => (
+                      // eslint-disable-next-line
+                      <option value={service} key={key}>
+                        {service}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                {!Object.keys(state.supported).includes(
+                  state.currentPetInFocus
+                ) ? (
+                  <Form.Group>
+                    <Form.Label>Pet Base Price</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="price"
+                      // Cheap hack - may not cover all cases
+                      ref={register({validate: value => !isNaN(value)})}
+                      required
+                    />
+                  </Form.Group>
+                ) : null}{' '}
+                <Button variant="primary" type="submit">
+                  Submit
+                </Button>
+              </FormCustom>
+            </div>
+          ) : null}
+        </Tab>
+        <Tab eventKey="data" title="Summary">
+          {caretakerData}
+        </Tab>
+      </Tabs>
     </div>
   );
 };

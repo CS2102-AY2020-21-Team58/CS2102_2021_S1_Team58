@@ -1,10 +1,11 @@
 import React, {useState, useEffect} from 'react';
 import moment from 'moment';
 import 'moment-timezone';
-import {Button} from 'react-bootstrap';
+import {Button, Tabs, Tab} from 'react-bootstrap';
 import Cookies from 'js-cookie';
 import Table from '../../components/Table';
 import {createAlert, backendHost, fetchStatusHandler} from '../../utils';
+import style from './BidsCaretaker.module.css';
 
 const BidsCaretaker = () => {
   const todayDate = moment().tz('Asia/Singapore').format('YYYY-MM-DD');
@@ -40,6 +41,7 @@ const BidsCaretaker = () => {
             </Button>
             <Button
               variant="danger"
+              className={style.decline_btn}
               // eslint-disable-next-line
               onClick={() => submitAction('decline', row.values)}>
               Decline
@@ -65,7 +67,6 @@ const BidsCaretaker = () => {
       ).then(fetchStatusHandler);
       await fetchData();
     } catch (error) {
-      console.log(error);
       createAlert('Failed to submit action');
     }
   };
@@ -133,11 +134,17 @@ const BidsCaretaker = () => {
   }, []);
 
   return (
-    <div>
-      <h3>Upcoming Jobs</h3>
-      <Table columns={state.upcoming.columns} data={state.upcoming.data} />
-      <h3>Pending Bids</h3>
-      <Table columns={state.pending.columns} data={state.pending.data} />
+    <div className={style.container}>
+      <Tabs defaultActiveKey="upcoming" className={style.tab_bar}>
+        <Tab eventKey="upcoming" title="Upcoming Bids">
+          <h3>Upcoming Jobs</h3>
+          <Table columns={state.upcoming.columns} data={state.upcoming.data} />
+        </Tab>
+        <Tab eventKey="pending" title="Pending Bids">
+          <h3>Pending Bids</h3>
+          <Table columns={state.pending.columns} data={state.pending.data} />
+        </Tab>
+      </Tabs>
     </div>
   );
 };
