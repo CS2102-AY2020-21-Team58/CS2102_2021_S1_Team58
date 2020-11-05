@@ -12,12 +12,38 @@ const AdminPage = () => {
     noOfPetsCared: 0,
     totalSalary: 0,
     salaryData: {data: [], columns: []},
+    maxMonth: 0,
+    profit: 0,
   });
 
   const salaryColumns = [
     {Header: 'Caretaker', accessor: 'cusername'},
     {Header: 'Salary Owed', accessor: 'salary'},
   ];
+
+  const fetchMaxMonth = async () => {
+    try {
+      const maxMonthResponse = await fetch(`${backendHost}/monthmaxjobs`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      return maxMonthResponse.results[0].month;
+    } catch (error) {
+      createAlert('Failed to fetch max month');
+      return null;
+    }
+  };
+
+  const fetchProfitMonth = async todayDate => {
+    try {
+      const profitResponse = await fetch(`${backendHost}/profit/${todayDate}`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      return profitResponse.results.profit;
+    } catch (error) {
+      createAlert('Failed to fetch profit');
+      return null;
+    }
+  };
 
   const fetchData = async () => {
     const todayDate = moment().format('YYYY-MM-DD');
@@ -51,12 +77,16 @@ const AdminPage = () => {
     }
 
     const caretakerSalaries = await fetchAllCaretakerSalaries();
+    const maxMonth = await fetchMaxMonth();
+    const profit = await fetchProfitMonth(todayDate);
 
     setState({
       ...state,
       noOfPetsCared,
       totalSalary,
       salaryData: {data: caretakerSalaries, columns: salaryColumns},
+      maxMonth,
+      profit,
     });
   };
 
@@ -89,14 +119,33 @@ const AdminPage = () => {
         <Tab eventKey="summary" title="Summary">
           <h3>Pet-Pals Administrator Summary for this month</h3>
           <div className={style.summary_box}>
-            <InfoBox
-              title="Number of pets cared this month"
-              content={state.noOfPetsCared}
-            />
-            <InfoBox
-              title="Total Salary owed to Caretakers this month"
-              content={`$${state.totalSalary}`}
-            />
+            <div className={style.info_row}>
+              <InfoBox
+                title="Number of pets cared this month"
+                content={state.noOfPetsCared}
+              />
+              <InfoBox
+                title="Total Salary owed to Caretakers this month"
+                content={`$${state.totalSalary}`}
+              />
+            </div>
+            <div className={style.info_row}>
+              <InfoBox
+                title="Profits this month"
+                // eslint-disable-next-line
+                content={`${state.profit ? state.profit : 0} SGD`}
+              />
+              <InfoBox
+                title="Month with most jobs"
+                content={
+                  state.maxMonth
+                    ? moment()
+                        .month(state.maxMonth - 1)
+                        .format('MMMM')
+                    : 'N/A'
+                }
+              />
+            </div>
           </div>
         </Tab>
         <Tab eventKey="salaries" title="Caretaker Salaries">

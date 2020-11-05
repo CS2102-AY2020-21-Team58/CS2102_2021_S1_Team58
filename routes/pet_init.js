@@ -53,6 +53,7 @@ module.exports.initRouter = function initRouter(app) {
   app.get("/underperforming_caretakers/:date", get_bad_caretakers);
   app.get("/top_ratings/:username", get_top_ratings);
   app.get("/worst_ratings/:username", get_worst_ratings);
+  app.get("/ratings", getAllCaretakerRatings);
   app.get("/pets/month", getPetsTakenCareInMonth);
   app.get("/caretakers/:username/pet_days/:date", getPetDaysInMonth);
   app.get("/baserates", getBaseRates);
@@ -1389,6 +1390,16 @@ function get_worst_ratings(req, res, next) {
       });
       console.log(err);
     });
+}
+
+async function getAllCaretakerRatings(req, res) {
+  try {
+    const results = await pool.query(queries.getAverageRatings);
+    res.status(200).json({ results: results.rows });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ error });
+  }
 }
 
 function getBaseRates(req, res, next) {

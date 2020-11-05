@@ -38,6 +38,7 @@ const BidsOwner = () => {
     {Header: 'Caretaker', accessor: 'username'},
     {Header: 'Name', accessor: 'first_name'},
     {Header: 'Bid Price', accessor: 'price'},
+    {Header: 'Average Rating', accessor: 'rating'},
     {
       Header: () => null,
       id: 'book',
@@ -110,6 +111,23 @@ const BidsOwner = () => {
     });
   };
 
+  const getAverageRatings = async () => {
+    try {
+      const ratingsResponse = await fetch(`${backendHost}/ratings`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      const ratingsMap = {};
+      ratingsResponse.results.forEach(element => {
+        // eslint-disable-next-line
+        ratingsMap[element.caretaker] = parseFloat(element.avg).toFixed(2);
+      });
+      return ratingsMap;
+    } catch (error) {
+      createAlert('Failed to get average ratings');
+      return {};
+    }
+  };
+
   const getAvailableCaretakers = async () => {
     const {start, end, pet} = state.form;
 
@@ -137,11 +155,22 @@ const BidsOwner = () => {
       createAlert('Could not get availability');
     }
 
+    const ratingsMap = await getAverageRatings();
+    const availableCaretakersWithRating = availableCaretakers.results.map(
+      caretaker => ({
+        ...caretaker,
+        rating:
+          ratingsMap[caretaker.username] === undefined
+            ? 'Not Available'
+            : ratingsMap[caretaker.username],
+      })
+    );
+
     setState({
       ...state,
       newBidsTable: {
         columns: newBidsColumns,
-        data: availableCaretakers.results,
+        data: availableCaretakersWithRating,
         bidModalData: {
           start: state.form.start,
           end: state.form.end,

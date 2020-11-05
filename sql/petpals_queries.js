@@ -221,6 +221,7 @@ sql.query = {
     get_caretakers_same_area: 'SELECT * FROM caretakers WHERE EXISTS (SELECT 1 FROM users WHERE caretakers.username = users.username AND location = $1)',
     //get base rates
     get_base_rates: 'SELECT * FROM pet_types',
+    getAverageRatings: 'SELECT caretaker, AVG(rating) FROM bookings WHERE rating IS NOT NULL GROUP BY caretaker',
 
     //SALARY QUERIES
     //get salary in given month for a particular part timer. $2 needs to be date in formal \'yyyy-mm-dd\'
