@@ -14,11 +14,12 @@ const InfoBox = props => (
 
 InfoBox.propTypes = {
   title: PropTypes.string.isRequired,
-  content: PropTypes.string.isRequired,
+  content: PropTypes.string,
   subtitle: PropTypes.string,
 };
 
 InfoBox.defaultProps = {
+  content: '0',
   subtitle: '',
 };
 

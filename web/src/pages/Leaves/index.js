@@ -131,7 +131,8 @@ const Leaves = () => {
         .then(fetchStatusHandler)
         .then(res => res.json());
       // eslint-disable-next-line
-      salaryThisMonth = salaryResponse.results.salary;
+      salaryThisMonth =
+        salaryResponse.results == undefined ? 0 : salaryResponse.results.salary;
     } catch (error) {
       createAlert('Failed to fetch caretaker salary');
     }
@@ -144,7 +145,10 @@ const Leaves = () => {
         .then(fetchStatusHandler)
         .then(res => res.json());
       // eslint-disable-next-line
-      noOfPetDays = petDaysResponse.results[0].sum;
+      noOfPetDays =
+        petDaysResponse.results[0].sum == undefined
+          ? 0
+          : petDaysResponse.results[0].sum;
     } catch (error) {
       createAlert('Failed to fetch number of pet days worked');
     }
