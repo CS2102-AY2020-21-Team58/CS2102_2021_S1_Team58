@@ -9,7 +9,7 @@ import {LOGIN} from '../../actions/actionTypes';
 // eslint-disable-next-line
 import {backendHost, createAlert, getUserType} from '../../utils';
 
-/* eslint-disable fp/no-mutating-methods */
+/* eslint-disable */
 const parseUserType = userType => {
   const results = [];
   if (

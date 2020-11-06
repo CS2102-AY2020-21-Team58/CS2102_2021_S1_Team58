@@ -38,6 +38,7 @@ const BidsOwner = () => {
     {Header: 'Caretaker', accessor: 'username'},
     {Header: 'Name', accessor: 'first_name'},
     {Header: 'Bid Price', accessor: 'price'},
+    {Header: 'Average Rating', accessor: 'rating'},
     {
       Header: () => null,
       id: 'book',
@@ -110,6 +111,23 @@ const BidsOwner = () => {
     });
   };
 
+  const getAverageRatings = async () => {
+    try {
+      const ratingsResponse = await fetch(`${backendHost}/ratings`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      const ratingsMap = {};
+      ratingsResponse.results.forEach(element => {
+        // eslint-disable-next-line
+        ratingsMap[element.caretaker] = parseFloat(element.avg).toFixed(2);
+      });
+      return ratingsMap;
+    } catch (error) {
+      createAlert('Failed to get average ratings');
+      return {};
+    }
+  };
+
   const getAvailableCaretakers = async () => {
     const {start, end, pet} = state.form;
 
@@ -137,15 +155,28 @@ const BidsOwner = () => {
       createAlert('Could not get availability');
     }
 
+    const ratingsMap = await getAverageRatings();
+    const availableCaretakersWithRating = availableCaretakers.results
+      .map(caretaker => ({
+        ...caretaker,
+        rating:
+          ratingsMap[caretaker.username] === undefined
+            ? 'Not Available'
+            : ratingsMap[caretaker.username],
+      }))
+      .filter(caretaker => caretaker.username !== username);
+
     setState({
       ...state,
       newBidsTable: {
         columns: newBidsColumns,
-        data: availableCaretakers.results,
+        data: availableCaretakersWithRating,
         bidModalData: {
           start: state.form.start,
           end: state.form.end,
           booking_date: state.form.start,
+          delivery: 'Delivery',
+          payment: 'Card',
         },
       },
       showBidsTable: true,
@@ -211,6 +242,8 @@ const BidsOwner = () => {
       price,
       username: caretaker,
       booking_date: bookingDate,
+      delivery,
+      payment,
     } = modalState.bidModalData;
     const {pet} = state.form;
     const username = Cookies.get('petpals-username');
@@ -225,8 +258,8 @@ const BidsOwner = () => {
           caretaker,
           start_period: bookingDate,
           end_period: bookingDate,
-          payment_method: 'Card',
-          delivery_method: 'Normal',
+          payment_method: payment,
+          delivery_method: delivery,
           bid_rate: price,
         }),
       }).then(fetchStatusHandler);
@@ -280,6 +313,26 @@ const BidsOwner = () => {
     });
   };
 
+  const onDeliveryChange = event => {
+    setModalState({
+      ...modalState,
+      bidModalData: {
+        ...modalState.bidModalData,
+        delivery: event.target.value,
+      },
+    });
+  };
+
+  const onPaymentChange = event => {
+    setModalState({
+      ...modalState,
+      bidModalData: {
+        ...modalState.bidModalData,
+        payment: event.target.value,
+      },
+    });
+  };
+
   const bidModal =
     modalState.modalToShow === 'bid' ? (
       <Modal
@@ -287,15 +340,37 @@ const BidsOwner = () => {
         title="Make a new Bid"
         handleClose={handleModalClose}>
         <ModalBS.Body>
-          <input
-            type="date"
-            id="bid-start"
-            name="bid-start"
-            value={modalState.bidModalData.booking_date}
-            min={state.form.start}
-            max={state.form.end}
-            onChange={changeBidDatePickerSelected}
-          />
+          <div className={style.bid_entry}>
+            <p>Date of job</p>
+            <input
+              type="date"
+              id="bid-start"
+              name="bid-start"
+              value={modalState.bidModalData.booking_date}
+              min={state.form.start}
+              max={state.form.end}
+              onChange={changeBidDatePickerSelected}
+            />
+          </div>
+          <div className={style.bid_entry}>
+            <p>Delivery options</p>
+            <select
+              value={modalState.bidModalData.delivery}
+              onChange={onDeliveryChange}>
+              <option value="Delivery">Delivery</option>
+              <option value="Transfer">Transfer</option>
+              <option value="Pickup">Pickup</option>
+            </select>
+          </div>
+          <div className={style.bid_entry}>
+            <p>Payment Mode</p>
+            <select
+              value={modalState.bidModalData.payment}
+              onChange={onPaymentChange}>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+            </select>
+          </div>
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}

@@ -15,9 +15,32 @@
   background: white;
   border-radius: 10px;
   display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+  padding: 16px 16px;
   width: 100%;
+}
+
+.info_row {
+  display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-  padding: 32px 16px;
-  margin-top: 24px;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.tab_bar {
+  border-bottom: 1px solid #772c45;
+  margin-bottom: 16px;
+}
+
+.tab_bar > a {
+  color: #ac3b61;
+  font-weight: 600;
+}
+
+.tab_bar > .nav-link.active {
+  background-color: grey;
+  color: #ac3b61;
+  font-weight: 600;
 }
