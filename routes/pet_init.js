@@ -970,7 +970,7 @@ function delete_leave_or_availability(req, res, next) {
   pool
     .query(queries.check_if_part_timer, [username])
     .then((result) => {
-      if (result.rows[0].count == "1") {
+      if (result.rowCount === 1) {
         pool
           .query(queries.delete_availability, [
             username,
@@ -990,7 +990,7 @@ function delete_leave_or_availability(req, res, next) {
           });
       } else {
         pool.query(queries.check_if_full_timer, [username]).then((result) => {
-          if (result.rows[0].count == "1") {
+          if (result.rowCount === 1) {
             pool
               .query(queries.delete_leave, [username, start_period, end_period])
               .then((result) => {
