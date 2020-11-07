@@ -433,3 +433,23 @@ CREATE TRIGGER insert_availability
     BEFORE INSERT ON available_dates
     FOR EACH ROW
 EXECUTE PROCEDURE check_and_merge_availability();
+
+CREATE OR REPLACE FUNCTION check_no_accepted() RETURNS trigger AS $ret$
+	BEGIN
+        IF (EXISTS(SELECT 1 FROM bookings B
+                   WHERE EXISTS (SELECT 1 FROM part_timers P WHERE OLD.username = P.username)
+                     AND OLD.username = B.caretaker
+                     AND status = 'ACCEPTED'
+                     AND ((OLD.start_period <= B.start_period AND OLD.end_period >= B.start_period)
+                       OR (OLD.start_period BETWEEN B.start_period AND B.end_period)
+                       OR (OLD.end_period BETWEEN B.start_period AND B.end_period))))
+            THEN RETURN NULL;
+        END IF;
+    RETURN OLD;
+	END;
+$ret$ LANGUAGE plpgsql;
+
+CREATE TRIGGER prevent_delete_availability
+	BEFORE DELETE ON available_dates
+	FOR EACH ROW
+	EXECUTE PROCEDURE check_no_accepted();
