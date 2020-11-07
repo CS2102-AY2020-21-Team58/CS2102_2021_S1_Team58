@@ -171,6 +171,8 @@ CREATE OR REPLACE FUNCTION update_fulltimer_booking() RETURNS trigger as $ret$
                         FROM (SELECT NEW.start_period + (interval '1' month * generate_series(0, CAST((DATE_PART('year', new.end_period) - DATE_PART('year', new.start_period)) * 12 + (DATE_PART('month', NEW.end_period) - DATE_PART('month', NEW.start_period)) AS INTEGER))) AS day) AS interval_months
                         WHERE (SELECT SUM(
                                     CASE
+                                    WHEN start_period > interval_months.day THEN
+                                    0
                                     WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', start_period) AND (DATE_PART('month', interval_months.day) < DATE_PART('month', end_period) OR DATE_PART('year', interval_months.day) < DATE_PART('year', end_period)) THEN
                                     DATE_PART('day', (date_trunc('month', start_period) + interval '1 month') - start_period)
                                     WHEN DATE_PART('month', interval_months.day) = DATE_PART('month', end_period) AND (DATE_PART('month', interval_months.day) > DATE_PART('month', start_period) OR DATE_PART('year', interval_months.day) > DATE_PART('year', end_period)) THEN
@@ -181,9 +183,9 @@ CREATE OR REPLACE FUNCTION update_fulltimer_booking() RETURNS trigger as $ret$
                                     DATE_PART('day', date_trunc('month', interval_months.day) + interval '1 month' - interval '1 day')
                                     WHEN DATE_PART('month', interval_months.day) > DATE_PART('month', end_period) AND DATE_PART('year', end_period) > DATE_PART('year', interval_months.day) THEN
                                     DATE_PART('day', date_trunc('month', interval_months.day) + interval '1 month' - interval '1 day')
-                                    WHEN DATE_PART('month', interval_months.day) <= DATE_PART('month', end_period) AND DATE_PART('year', end_period) >= DATE_PART('year', interval_months.day) THEN
+                                    WHEN DATE_PART('month', interval_months.day) < DATE_PART('month', end_period) AND DATE_PART('year', end_period) > DATE_PART('year', interval_months.day) THEN
                                     DATE_PART('day', date_trunc('month', interval_months.day) + interval '1 month' - interval '1 day')
-                          END)
+                                    END)
                                 FROM (SELECT * FROM bookings EXCEPT SELECT * FROM bookings WHERE NEW.owner=owner AND NEW.pet_name=pet_name AND NEW.caretaker=caretaker AND NEW.start_period=start_period AND NEW.end_period=end_period) AS b
                                 WHERE caretaker=NEW.caretaker AND status='ACCEPTED') >= 60) AND 
             NOT EXISTS (SELECT *
