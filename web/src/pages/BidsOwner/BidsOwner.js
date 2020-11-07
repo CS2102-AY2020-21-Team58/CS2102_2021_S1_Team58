@@ -77,7 +77,36 @@ const BidsOwner = () => {
     {Header: 'Pet Name', accessor: 'pet_name'},
     {Header: 'Bid Price', accessor: 'bid_rate'},
     {Header: 'Job Date', accessor: 'start_period'},
+    {
+      Header: 'Cancel Booking',
+      id: 'cancel',
+      // eslint-disable-next-line
+      Cell: ({row}) => (
+        // eslint-disable-next-line
+        <Button variant="danger" onClick={cancelBooking(row.values)}>
+          Cancel
+        </Button>
+      ),
+    },
   ];
+
+  const cancelBooking = values => async () => {
+    const username = Cookies.get('petpals-username');
+    const {pet_name: petName, start_period: start, caretaker} = values;
+
+    try {
+      await fetch(
+        `${backendHost}/booking/${username}/${petName}/${caretaker}/${start}/${start}`,
+        {
+          method: 'DELETE',
+          headers: {'Content-Type': 'application/json'},
+        }
+      ).then(fetchStatusHandler);
+      await fetchData();
+    } catch (error) {
+      createAlert('Failed to delete booking');
+    }
+  };
 
   const handleModalClose = () =>
     setModalState({...modalState, modalToShow: '', showModal: false});
@@ -88,7 +117,7 @@ const BidsOwner = () => {
       ...modalState,
       showModal: true,
       modalToShow: 'bid',
-      bidModalData: row,
+      bidModalData: {...row, delivery: 'Delivery', payment: 'Card'},
     });
   };
 
@@ -171,13 +200,6 @@ const BidsOwner = () => {
       newBidsTable: {
         columns: newBidsColumns,
         data: availableCaretakersWithRating,
-        bidModalData: {
-          start: state.form.start,
-          end: state.form.end,
-          booking_date: state.form.start,
-          delivery: 'Delivery',
-          payment: 'Card',
-        },
       },
       showBidsTable: true,
     });
@@ -283,13 +305,16 @@ const BidsOwner = () => {
       start_period: date,
     } = modalState.reviewModalData;
 
+    // good old web api
+    const review = document.querySelector('#review').value;
+
     try {
       await fetch(
         `${backendHost}/booking/${username}/${petName}/${caretaker}/${date}/${date}`,
         {
           method: 'PUT',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({rating}),
+          body: JSON.stringify({rating, review}),
         }
       ).then(fetchStatusHandler);
       await fetchData();
@@ -388,13 +413,22 @@ const BidsOwner = () => {
         title="Leave a Review for this service"
         handleClose={handleModalClose}>
         <ModalBS.Body>
-          <select name="review" onChange={changeRatings}>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
+          <div className={style.review}>
+            <div className={style.bid_entry}>
+              <p>Rating</p>
+              <select name="review" onChange={changeRatings}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+            <div className={style.bid_entry}>
+              <p>Review</p>
+              <textarea id="review" />
+            </div>
+          </div>
         </ModalBS.Body>
         <ModalBS.Footer>
           {/* TODO: Make the onClick Button confirm the booking */}

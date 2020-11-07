@@ -1,10 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Tabs, Tab} from 'react-bootstrap';
+import {Button, Form, Tabs, Tab} from 'react-bootstrap';
+import {useForm} from 'react-hook-form';
 import moment from 'moment';
 import 'moment-timezone';
 import {createAlert, backendHost, fetchStatusHandler} from '../../utils';
 import InfoBox from '../../components/InfoBox';
 import Table from '../../components/Table';
+import {FormCustom} from '../../components/FormCustom';
 import style from './Admin.module.css';
 
 const AdminPage = () => {
@@ -14,7 +16,11 @@ const AdminPage = () => {
     salaryData: {data: [], columns: []},
     maxMonth: 0,
     profit: 0,
+    baseRates: [],
+    basePrice: 0,
+    currentPetInFocus: '',
   });
+  const {register, handleSubmit, reset} = useForm();
 
   const salaryColumns = [
     {Header: 'Caretaker', accessor: 'cusername'},
@@ -41,6 +47,18 @@ const AdminPage = () => {
       return profitResponse.results.profit;
     } catch (error) {
       createAlert('Failed to fetch profit');
+      return null;
+    }
+  };
+
+  const fetchBaseRates = async () => {
+    try {
+      const ratesResponse = await fetch(`${backendHost}/baserates`)
+        .then(fetchStatusHandler)
+        .then(res => res.json());
+      return ratesResponse.results;
+    } catch (error) {
+      createAlert('Failed to fetch base rates');
       return null;
     }
   };
@@ -79,6 +97,7 @@ const AdminPage = () => {
     const caretakerSalaries = await fetchAllCaretakerSalaries();
     const maxMonth = await fetchMaxMonth();
     const profit = await fetchProfitMonth(todayDate);
+    const baseRates = await fetchBaseRates();
 
     setState({
       ...state,
@@ -87,6 +106,7 @@ const AdminPage = () => {
       salaryData: {data: caretakerSalaries, columns: salaryColumns},
       maxMonth,
       profit,
+      baseRates,
     });
   };
 
@@ -107,6 +127,77 @@ const AdminPage = () => {
 
     return caretakerSalaries;
   };
+
+  const submitRateForm = async () => {
+    try {
+      await fetch(
+        `${backendHost}/baserates/${state.currentPetInFocus}/${state.basePrice}`,
+        {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+        }
+      ).then(fetchStatusHandler);
+      await fetchData();
+      reset();
+    } catch (error) {
+      createAlert(
+        'Failed to register change base rate. Perhaps it was too High'
+      );
+    }
+  };
+
+  const baseRateForm = (
+    <FormCustom onSubmit={handleSubmit(submitRateForm)}>
+      <Form.Group>
+        <Form.Label>Pet Type</Form.Label>
+        <Form.Control
+          as="select"
+          name="pet"
+          ref={register}
+          required
+          onChange={event => {
+            setState({
+              ...state,
+              currentPetInFocus: event.target.value,
+              basePrice: state.baseRates.filter(
+                r => r.animal_name === event.target.value
+              )[0].base_price,
+            });
+          }}
+          value={state.currentPetInFocus}>
+          <option value="">Select a pet</option>
+          {state.baseRates.map((item, key) => (
+            // eslint-disable-next-line
+            <option value={item.animal_name} key={key}>
+              {item.animal_name}
+            </option>
+          ))}
+        </Form.Control>
+      </Form.Group>
+      {state.currentPetInFocus !== '' ? (
+        <Form.Group>
+          <Form.Label>Pet Base Price</Form.Label>
+          <Form.Control
+            type="text"
+            name="price"
+            // Cheap hack - may not cover all cases
+            ref={register({validate: value => !isNaN(value)})}
+            value={state.basePrice}
+            onChange={event =>
+              setState({...state, basePrice: event.target.value})
+            }
+            required
+          />
+        </Form.Group>
+      ) : null}
+      <Button
+        variant="primary"
+        type="submit"
+        disabled={state.currentPetInFocus === ''}>
+        Submit
+      </Button>
+    </FormCustom>
+  );
 
   useEffect(() => {
     fetchData();
@@ -154,6 +245,9 @@ const AdminPage = () => {
             data={state.salaryData.data}
             columns={state.salaryData.columns}
           />
+        </Tab>
+        <Tab eventKey="rate" title="Edit Base Rates">
+          {baseRateForm}
         </Tab>
       </Tabs>
     </div>
