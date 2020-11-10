@@ -4,13 +4,10 @@ const queries = require("../sql/petpals_queries").sql.query;
 // Postgre SQL Connection
 const { Pool } = require("pg");
 
-// Change Database Settings Here BEFORE DEPLOYMENT
+// Database settings for Heroku deployment
 const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+    connectionString: process.env.DATABASE_URL,
+    //ssl: true
 });
 
 module.exports.initRouter = function initRouter(app) {
