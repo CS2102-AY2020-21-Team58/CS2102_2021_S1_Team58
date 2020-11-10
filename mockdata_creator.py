@@ -14,7 +14,7 @@ add_owner = "INSERT INTO owners(username) VALUES('{}');\n"
 add_caretaker = "INSERT INTO caretakers(username) VALUES('{}');\n"
 add_part = "INSERT INTO part_timers(username) VALUES('{}');\n"
 add_full = "INSERT INTO full_timers(username) VALUES('{}');\n"
-add_admin = "INSERT INTO administrator (username) VALUES({});\n"
+add_admin = "INSERT INTO administrator (username) VALUES('{}');\n"
 
 passwordf = "password{}"
 caretakerf = "caretaker{}"
@@ -102,7 +102,7 @@ for o in owners:
     onwer_pet[o] = []
 
     for i in range(0, petnum):
-        pettype = pet_types[random.randint(0, 4)]
+        pettype = pet_types[random.randint(0, 3)]
         petname = pettype + str(petid)
         pets.append(petname)
         petid += 1
@@ -123,8 +123,8 @@ insert_petservice = "INSERT INTO requires (owner, pet_name, service_name) VALUES
 for o in onwer_pet.keys():
     animals = onwer_pet[o]
     for p in animals:
-        s_start = random.randint(0, 6)
-        s_end = random.randint(6-s_start, 6)
+        s_start = random.randint(0, 3)
+        s_end = random.randint(3-s_start, 3)
 
         for i in range(s_start, s_end):
             s = services[i]
@@ -138,8 +138,8 @@ for c in caretaker_animal:
     animals = caretaker_animal[c]
 
     for a in animals:
-        s_start = random.randint(0, 6)
-        s_end = random.randint(6-s_start, 6)
+        s_start = random.randint(0, 3)
+        s_end = random.randint(3-s_start, 3)
 
         for i in range(s_start, s_end):
             s = services[i]
