@@ -1,7 +1,7 @@
 import Cookies from 'js-cookie';
 
 export const isCookieSet = () => Cookies.get('petpals') !== undefined;
-export const backendHost = process.env.REACT_APP_BACKEND_HOST;
+export const backendHost = process.env.REACT_APP_BACKEND_HOST || process.env.PORT || 5000;
 export const allPetTypes = ['Cat', 'Big Dog', 'Dog', 'Lizard'];
 export const allPetServices = ['Feed', 'Bathe', 'Give pills', 'Take on walk'];
 export const createAlert = message => {
