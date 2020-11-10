@@ -2,9 +2,6 @@
   "name": "app",
   "version": "0.0.0",
   "private": true,
-  "engines": {
-    "yarn": "1.x"
-  },
   "dependencies": {
     "bcrypt": "^3.0.8",
     "body-parser": "^1.18.3",
@@ -27,6 +24,5 @@
   },
   "scripts": {
     "start": "node pet_app.js",
-    "heroku-postbuild": "cd web && yarn && yarn start"
   }
 }
