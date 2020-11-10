@@ -26,6 +26,6 @@
     "prettier": "^2.1.2"
   },
   "scripts": {
-    "start": "node pet_app.js",
+    "start": "node pet_app.js"
   }
 }
