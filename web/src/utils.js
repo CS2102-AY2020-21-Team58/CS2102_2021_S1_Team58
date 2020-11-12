@@ -9,7 +9,7 @@ export const createAlert = message => {
 };
 
 // Code-Gore below
-/* eslint-disable fp/no-mutation */
+/* eslint-disable */
 export const getUserType = type => {
   const isBoth =
     (type.indexOf('Part_Timer') !== -1 || type.indexOf('Part_Timer') !== -1) &&
