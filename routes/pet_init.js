@@ -1313,7 +1313,7 @@ function get_user_salary(req, res, next) {
   const date = "'" + req.params.date + "'";
   const username = req.params.username;
   const usertype = req.query.usertype;
-  if (usertype == "parttimer") {
+  if (usertype === "parttime") {
     query = queries.get_parttimer_salaries;
   } else {
     query = queries.get_fulltimer_salaries;
