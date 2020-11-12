@@ -1323,6 +1323,8 @@ function get_user_salary(req, res, next) {
         res.status(200).json({ results: {"salary": 3000} });
       } else if (usertype === "parttime" && result.rows.length === 0) {
         res.status(200).json({ results: {"salary": 0} });
+      } else if (usertype === "parttime" && result.rows[0].salary === null){
+        res.status(200).json({ results: {"salary": 0} });
       } else {
         res.status(200).json({ results: result.rows[0] });
       }
