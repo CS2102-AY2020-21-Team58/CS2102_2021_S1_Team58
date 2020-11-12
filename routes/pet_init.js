@@ -1310,7 +1310,7 @@ function get_user_salary(req, res, next) {
   const date = "'" + req.params.date + "'";
   const username = req.params.username;
   const usertype = req.query.usertype;
-  if (usertype == "parttimer") {
+  if (usertype === "parttime") {
     query = queries.get_parttimer_salaries;
   } else {
     query = queries.get_fulltimer_salaries;
@@ -1318,7 +1318,12 @@ function get_user_salary(req, res, next) {
   pool
     .query(query, [date, username])
     .then((result) => {
-      res.status(200).json({ results: result.rows[0] });
+      console.log(result);
+      if (usertype === "fulltime" && result.rows.length === 0) {
+        res.status(200).json({ results: 3000 });
+      } else {
+        res.status(200).json({ results: result.rows[0] });
+      }
     })
     .catch((err) => {
       res
