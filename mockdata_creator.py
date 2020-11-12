@@ -35,7 +35,7 @@ f.write(add_admin.format("Abdul"))
 f.write(add_user_f.format("Wei Yang", "pass5", "Wei Yang", "West", 1234567887654321))
 f.write(add_admin.format("Wei Yang"))
 
-# Add owners
+# Add owners - change the number to required.
 for i in range(0, 20):
     username = ownerf.format(i)
     password = passwordf.format(i)
@@ -48,7 +48,7 @@ for i in range(0, 20):
     
     owners.append(username)
 
-# Add caretakers
+# Add caretakers - change number to required.
 for i in range(0, 20):
     username = caretakerf.format(i)
     password = passwordf.format(i)
@@ -81,8 +81,8 @@ add_handles = "INSERT INTO handles (caretaker, animal_name, price) VALUES ('{}',
 caretaker_animal = {}
 
 for c in caretakers:
-        s_start = random.randint(0, 4)
-        s_end = random.randint(4-s_start, 4)
+        s_start = random.randint(0, 3)
+        s_end = random.randint(3-s_start, 3)
 
         caretaker_animal[c] = []
 
@@ -102,7 +102,7 @@ for o in owners:
     onwer_pet[o] = []
 
     for i in range(0, petnum):
-        pettype = pet_types[random.randint(0, 4)]
+        pettype = pet_types[random.randint(0, 3)]
         petname = pettype + str(petid)
         pets.append(petname)
         petid += 1
@@ -123,8 +123,8 @@ insert_petservice = "INSERT INTO requires (owner, pet_name, service_name) VALUES
 for o in onwer_pet.keys():
     animals = onwer_pet[o]
     for p in animals:
-        s_start = random.randint(0, 6)
-        s_end = random.randint(6-s_start, 6)
+        s_start = random.randint(0, 3)
+        s_end = random.randint(3-s_start, 3)
 
         for i in range(s_start, s_end):
             s = services[i]
@@ -138,14 +138,9 @@ for c in caretaker_animal:
     animals = caretaker_animal[c]
 
     for a in animals:
-        s_start = random.randint(0, 6)
-        s_end = random.randint(6-s_start, 6)
+        s_start = random.randint(0, 3)
+        s_end = random.randint(3-s_start, 3)
 
         for i in range(s_start, s_end):
             s = services[i]
             f.write(caretaker_provides.format(c, a, s))
-
-
-
-
-
