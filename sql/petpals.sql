@@ -12,7 +12,7 @@ CREATE TABLE administrator (
 
 CREATE TABLE caretakers (
     username varchar(64) references users(username) PRIMARY KEY,
-    average_rating numeric check(average_rating >= 0 AND average_rating <= 5)
+    average_rating numeric default 0 check(average_rating >= 0 AND average_rating <= 5)
 );
 
 CREATE TABLE owners (
