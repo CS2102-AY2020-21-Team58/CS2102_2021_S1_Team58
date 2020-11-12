@@ -1320,9 +1320,9 @@ function get_user_salary(req, res, next) {
     .then((result) => {
       console.log(result);
       if (usertype === "fulltime" && result.rows.length === 0) {
-        res.status(200).json({ results: 3000 });
+        res.status(200).json({ results: [{"salary": 3000}] });
       } else if (usertype === "parttime" && result.rows.length === 0) {
-        res.status(200).json({ results: 0 });
+        res.status(200).json({ results: [{"salary": 0}] });
       } else {
         res.status(200).json({ results: result.rows[0] });
       }
