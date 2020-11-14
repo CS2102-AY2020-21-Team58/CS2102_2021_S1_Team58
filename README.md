@@ -1,4 +1,5 @@
-# cs2102_ay1819_s2
-CS2102 Database Systems: Introduction to Web Application Development
+# cs2102_ay20-21_S1
+
+## Team 58 - Pet Pals
 
 DEMO: https://youtu.be/IhJIhRMRDz8
